@@ -1,0 +1,293 @@
+Salvage - working notes
+=======================
+
+Author: Avery Quinn   |   Doc #11   |   status: rough draft
+
+The idea: Salvage is a marketplace for reclaimed building materials.
+
+
+The problem
+-----------
+There's a real pull toward why onboarding friction quietly kills good products, and most
+existing tools ignore it. Reminder to self: why onboarding friction quietly kills good
+products is the thing that actually matters here. When I talk to potential users, the
+frustration is never the headline feature - it's the ten minutes of setup before anyone
+gets value. I keep coming back to the belief that the tension between open-source goodwill
+and paying the bills. People keep running into the same wall: the tension between open-
+source goodwill and paying the bills. If I forget everything else, don't forget that the
+tension between open-source goodwill and paying the bills.
+
+Who it's for
+------------
+A narrow user also makes the marketing obvious - you know exactly which community to show
+up in. Picking a tiny audience feels risky but it's the only way to say no to the wrong
+features. Note from a walk: kept thinking about the tension between open-source goodwill
+and paying the bills. The first user is narrow on purpose: a solo freelancer. Reminder to
+self: the tension between open-source goodwill and paying the bills is the thing that
+actually matters here. If we tried to serve everyone we'd drown in scope. Tools that
+reduce busywork for solo operators and freelancers is the wedge.
+
+Why now
+-------
+Note from a walk: kept thinking about distribution through communities instead of paid
+ads. The risk is building for a trend instead of a need. I want to check that distinction
+hard before writing code. Five years ago this would have needed a team. Now one person can
+ship the core in a weekend. Two things changed: the tooling got cheap, and people started
+caring about the tension between open-source goodwill and paying the bills. Reminder to
+self: tools that reduce busywork for solo operators and freelancers is the thing that
+actually matters here.
+
+How it could make money
+-----------------------
+Note from a walk: kept thinking about distribution through communities instead of paid
+ads. Plan: one-time purchase with optional support. Honestly the revenue model is the part
+I'm least sure about, and pretending otherwise would be a mistake. I keep circling pricing
+that stays free until a clear value moment, because charging too early scares off the
+exact people who would champion it. Reminder to self: tools that reduce busywork for solo
+operators and freelancers is the thing that actually matters here.
+
+Risks and doubts
+----------------
+There's also the open-source question - I want the goodwill, but goodwill doesn't pay
+rent. Biggest risk: it solves a problem people have but will not pay to fix. If I forget
+everything else, don't forget that the tension between open-source goodwill and paying the
+bills. Reminder to self: the tension between open-source goodwill and paying the bills is
+the thing that actually matters here. I should ship something rough and embarrassing early
+rather than polish in the dark for months.
+
+Next steps
+----------
+Write the smallest possible version that does one useful thing. Note from a walk: kept
+thinking about the tension between open-source goodwill and paying the bills. Decide in
+two weeks whether Salvage has legs or whether it's just a fun idea. If I forget everything
+else, don't forget that the tension between open-source goodwill and paying the bills.
+Find five real people with this problem and watch them try it without my help.
+
+The problem
+-----------
+If I forget everything else, don't forget that why onboarding friction quietly kills good
+products. There's a real pull toward why onboarding friction quietly kills good products,
+and most existing tools ignore it. I keep coming back to the belief that the tension
+between open-source goodwill and paying the bills. When I talk to potential users, the
+frustration is never the headline feature - it's the ten minutes of setup before anyone
+gets value. People keep running into the same wall: the tension between open-source
+goodwill and paying the bills. Note from a walk: kept thinking about the tension between
+open-source goodwill and paying the bills.
+
+Who it's for
+------------
+The first user is narrow on purpose: a solo freelancer. If we tried to serve everyone we'd
+drown in scope. Tools that reduce busywork for solo operators and freelancers is the
+wedge. Picking a tiny audience feels risky but it's the only way to say no to the wrong
+features. If I forget everything else, don't forget that why onboarding friction quietly
+kills good products. A narrow user also makes the marketing obvious - you know exactly
+which community to show up in. Reminder to self: tools that reduce busywork for solo
+operators and freelancers is the thing that actually matters here.
+
+Why now
+-------
+Reminder to self: the tension between open-source goodwill and paying the bills is the
+thing that actually matters here. The risk is building for a trend instead of a need. I
+want to check that distinction hard before writing code. Two things changed: the tooling
+got cheap, and people started caring about the tension between open-source goodwill and
+paying the bills. Five years ago this would have needed a team. Now one person can ship
+the core in a weekend. Note from a walk: kept thinking about pricing that stays free until
+a clear value moment.
+
+How it could make money
+-----------------------
+Honestly the revenue model is the part I'm least sure about, and pretending otherwise
+would be a mistake. Note from a walk: kept thinking about distribution through communities
+instead of paid ads. I keep circling pricing that stays free until a clear value moment,
+because charging too early scares off the exact people who would champion it. Plan: one-
+time purchase with optional support. If I forget everything else, don't forget that tools
+that reduce busywork for solo operators and freelancers.
+
+Risks and doubts
+----------------
+If I forget everything else, don't forget that tools that reduce busywork for solo
+operators and freelancers. I should ship something rough and embarrassing early rather
+than polish in the dark for months. Reminder to self: the tension between open-source
+goodwill and paying the bills is the thing that actually matters here. There's also the
+open-source question - I want the goodwill, but goodwill doesn't pay rent. Biggest risk:
+it solves a problem people have but will not pay to fix.
+
+Next steps
+----------
+Write the smallest possible version that does one useful thing. Find five real people with
+this problem and watch them try it without my help. Decide in two weeks whether Salvage
+has legs or whether it's just a fun idea. If I forget everything else, don't forget that
+tools that reduce busywork for solo operators and freelancers. Reminder to self: tools
+that reduce busywork for solo operators and freelancers is the thing that actually matters
+here.
+
+The problem
+-----------
+There's a real pull toward why onboarding friction quietly kills good products, and most
+existing tools ignore it. I keep coming back to the belief that the tension between open-
+source goodwill and paying the bills. When I talk to potential users, the frustration is
+never the headline feature - it's the ten minutes of setup before anyone gets value. Note
+from a walk: kept thinking about privacy as a feature rather than an afterthought. People
+keep running into the same wall: the tension between open-source goodwill and paying the
+bills. If I forget everything else, don't forget that tools that reduce busywork for solo
+operators and freelancers.
+
+Who it's for
+------------
+A narrow user also makes the marketing obvious - you know exactly which community to show
+up in. Note from a walk: kept thinking about the danger of building features nobody asked
+for. Reminder to self: why onboarding friction quietly kills good products is the thing
+that actually matters here. The first user is narrow on purpose: a solo freelancer. If we
+tried to serve everyone we'd drown in scope. Tools that reduce busywork for solo operators
+and freelancers is the wedge. Picking a tiny audience feels risky but it's the only way to
+say no to the wrong features.
+
+Why now
+-------
+The risk is building for a trend instead of a need. I want to check that distinction hard
+before writing code. Two things changed: the tooling got cheap, and people started caring
+about the tension between open-source goodwill and paying the bills. Five years ago this
+would have needed a team. Now one person can ship the core in a weekend. If I forget
+everything else, don't forget that the tension between open-source goodwill and paying the
+bills. Note from a walk: kept thinking about why onboarding friction quietly kills good
+products.
+
+How it could make money
+-----------------------
+I keep circling pricing that stays free until a clear value moment, because charging too
+early scares off the exact people who would champion it. Plan: one-time purchase with
+optional support. Reminder to self: tools that reduce busywork for solo operators and
+freelancers is the thing that actually matters here. Honestly the revenue model is the
+part I'm least sure about, and pretending otherwise would be a mistake. Note from a walk:
+kept thinking about distribution through communities instead of paid ads.
+
+Risks and doubts
+----------------
+There's also the open-source question - I want the goodwill, but goodwill doesn't pay
+rent. Biggest risk: it solves a problem people have but will not pay to fix. If I forget
+everything else, don't forget that why onboarding friction quietly kills good products.
+Reminder to self: the tension between open-source goodwill and paying the bills is the
+thing that actually matters here. I should ship something rough and embarrassing early
+rather than polish in the dark for months.
+
+Next steps
+----------
+Decide in two weeks whether Salvage has legs or whether it's just a fun idea. Note from a
+walk: kept thinking about the tension between open-source goodwill and paying the bills.
+Reminder to self: tools that reduce busywork for solo operators and freelancers is the
+thing that actually matters here. Find five real people with this problem and watch them
+try it without my help. Write the smallest possible version that does one useful thing.
+
+The problem
+-----------
+People keep running into the same wall: the tension between open-source goodwill and
+paying the bills. I keep coming back to the belief that the tension between open-source
+goodwill and paying the bills. If I forget everything else, don't forget that why
+onboarding friction quietly kills good products. When I talk to potential users, the
+frustration is never the headline feature - it's the ten minutes of setup before anyone
+gets value. There's a real pull toward why onboarding friction quietly kills good
+products, and most existing tools ignore it. Reminder to self: why onboarding friction
+quietly kills good products is the thing that actually matters here.
+
+Who it's for
+------------
+If we tried to serve everyone we'd drown in scope. Tools that reduce busywork for solo
+operators and freelancers is the wedge. Reminder to self: tools that reduce busywork for
+solo operators and freelancers is the thing that actually matters here. Note from a walk:
+kept thinking about tools that reduce busywork for solo operators and freelancers. A
+narrow user also makes the marketing obvious - you know exactly which community to show up
+in. The first user is narrow on purpose: a solo freelancer. Picking a tiny audience feels
+risky but it's the only way to say no to the wrong features.
+
+Why now
+-------
+Five years ago this would have needed a team. Now one person can ship the core in a
+weekend. The risk is building for a trend instead of a need. I want to check that
+distinction hard before writing code. Reminder to self: tools that reduce busywork for
+solo operators and freelancers is the thing that actually matters here. Two things
+changed: the tooling got cheap, and people started caring about the tension between open-
+source goodwill and paying the bills. If I forget everything else, don't forget that tools
+that reduce busywork for solo operators and freelancers.
+
+How it could make money
+-----------------------
+Honestly the revenue model is the part I'm least sure about, and pretending otherwise
+would be a mistake. Reminder to self: the tension between open-source goodwill and paying
+the bills is the thing that actually matters here. If I forget everything else, don't
+forget that tools that reduce busywork for solo operators and freelancers. I keep circling
+pricing that stays free until a clear value moment, because charging too early scares off
+the exact people who would champion it. Plan: one-time purchase with optional support.
+
+Risks and doubts
+----------------
+I should ship something rough and embarrassing early rather than polish in the dark for
+months. Biggest risk: it solves a problem people have but will not pay to fix. If I forget
+everything else, don't forget that tools that reduce busywork for solo operators and
+freelancers. Reminder to self: the tension between open-source goodwill and paying the
+bills is the thing that actually matters here. There's also the open-source question - I
+want the goodwill, but goodwill doesn't pay rent.
+
+Next steps
+----------
+Reminder to self: tools that reduce busywork for solo operators and freelancers is the
+thing that actually matters here. Write the smallest possible version that does one useful
+thing. Decide in two weeks whether Salvage has legs or whether it's just a fun idea. Note
+from a walk: kept thinking about the danger of building features nobody asked for. Find
+five real people with this problem and watch them try it without my help.
+
+The problem
+-----------
+When I talk to potential users, the frustration is never the headline feature - it's the
+ten minutes of setup before anyone gets value. There's a real pull toward why onboarding
+friction quietly kills good products, and most existing tools ignore it. I keep coming
+back to the belief that the tension between open-source goodwill and paying the bills.
+Reminder to self: tools that reduce busywork for solo operators and freelancers is the
+thing that actually matters here. If I forget everything else, don't forget that why
+onboarding friction quietly kills good products. People keep running into the same wall:
+the tension between open-source goodwill and paying the bills.
+
+Who it's for
+------------
+If I forget everything else, don't forget that the tension between open-source goodwill
+and paying the bills. A narrow user also makes the marketing obvious - you know exactly
+which community to show up in. Picking a tiny audience feels risky but it's the only way
+to say no to the wrong features. If we tried to serve everyone we'd drown in scope. Tools
+that reduce busywork for solo operators and freelancers is the wedge. Note from a walk:
+kept thinking about shipping a rough version early to learn from real users. The first
+user is narrow on purpose: a solo freelancer.
+
+Why now
+-------
+Two things changed: the tooling got cheap, and people started caring about the tension
+between open-source goodwill and paying the bills. If I forget everything else, don't
+forget that why onboarding friction quietly kills good products. Note from a walk: kept
+thinking about shipping a rough version early to learn from real users. The risk is
+building for a trend instead of a need. I want to check that distinction hard before
+writing code. Five years ago this would have needed a team. Now one person can ship the
+core in a weekend.
+
+How it could make money
+-----------------------
+Plan: one-time purchase with optional support. Honestly the revenue model is the part I'm
+least sure about, and pretending otherwise would be a mistake. Note from a walk: kept
+thinking about distribution through communities instead of paid ads. If I forget
+everything else, don't forget that the tension between open-source goodwill and paying the
+bills. I keep circling pricing that stays free until a clear value moment, because
+charging too early scares off the exact people who would champion it.
+
+Risks and doubts
+----------------
+Reminder to self: tools that reduce busywork for solo operators and freelancers is the
+thing that actually matters here. Note from a walk: kept thinking about local-first
+software that keeps user data on the device. There's also the open-source question - I
+want the goodwill, but goodwill doesn't pay rent. Biggest risk: it solves a problem people
+have but will not pay to fix. I should ship something rough and embarrassing early rather
+than polish in the dark for months.
+
+Next steps
+----------
+Note from a walk: kept thinking about the tension between open-source goodwill and paying
+the bills. Reminder to self: tools that reduce busywork for solo operators and freelancers
+is the thing that actually matters here. Find five real people with this problem and watch
+them try it without my help. Decide in two weeks whether Salvage has legs or whether it's
+just a fun idea. Write the smallest possible version that does one useful thing.

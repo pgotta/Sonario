@@ -1,0 +1,16 @@
+venv/
+__pycache__/
+*.pyc
+cache/*.json
+output/*
+!output/.gitkeep
+!cache/.gitkeep
+credentials/credentials.json
+credentials/token.json
+.DS_Store
+history/
+history/*.json
+
+# Optional local LLM bridges (downloaded by their setup .bat, never committed)
+Windows-Copilot-API/
+Deepseek-API/

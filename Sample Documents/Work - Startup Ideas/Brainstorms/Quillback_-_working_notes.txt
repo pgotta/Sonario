@@ -1,0 +1,292 @@
+Quillback - working notes
+=========================
+
+Author: Avery Quinn   |   Doc #12   |   status: rough draft
+
+The idea: Quillback is a feedback-collection widget aimed at indie SaaS makers.
+
+
+The problem
+-----------
+People keep running into the same wall: local-first software that keeps user data on the
+device. Note from a walk: kept thinking about distribution through communities instead of
+paid ads. When I talk to potential users, the frustration is never the headline feature -
+it's the ten minutes of setup before anyone gets value. I keep coming back to the belief
+that tools that reduce busywork for solo operators and freelancers. There's a real pull
+toward local-first software that keeps user data on the device, and most existing tools
+ignore it. If I forget everything else, don't forget that distribution through communities
+instead of paid ads.
+
+Who it's for
+------------
+Note from a walk: kept thinking about the danger of building features nobody asked for. If
+we tried to serve everyone we'd drown in scope. Ai copilots for small, specific
+professional niches is the wedge. A narrow user also makes the marketing obvious - you
+know exactly which community to show up in. The first user is narrow on purpose: a part-
+time operator. If I forget everything else, don't forget that AI copilots for small,
+specific professional niches. Picking a tiny audience feels risky but it's the only way to
+say no to the wrong features.
+
+Why now
+-------
+Five years ago this would have needed a team. Now one person can ship the core in a
+weekend. Two things changed: the tooling got cheap, and people started caring about tools
+that reduce busywork for solo operators and freelancers. Note from a walk: kept thinking
+about AI copilots for small, specific professional niches. Reminder to self: AI copilots
+for small, specific professional niches is the thing that actually matters here. The risk
+is building for a trend instead of a need. I want to check that distinction hard before
+writing code.
+
+How it could make money
+-----------------------
+Plan: free until a clear value moment, then a small monthly fee. If I forget everything
+else, don't forget that local-first software that keeps user data on the device. Honestly
+the revenue model is the part I'm least sure about, and pretending otherwise would be a
+mistake. I keep circling pricing that stays free until a clear value moment, because
+charging too early scares off the exact people who would champion it. Note from a walk:
+kept thinking about privacy as a feature rather than an afterthought.
+
+Risks and doubts
+----------------
+Biggest risk: I build features nobody asked for. I should ship something rough and
+embarrassing early rather than polish in the dark for months. There's also the open-source
+question - I want the goodwill, but goodwill doesn't pay rent. If I forget everything
+else, don't forget that tools that reduce busywork for solo operators and freelancers.
+Reminder to self: AI copilots for small, specific professional niches is the thing that
+actually matters here.
+
+Next steps
+----------
+Find five real people with this problem and watch them try it without my help. Reminder to
+self: the danger of building features nobody asked for is the thing that actually matters
+here. Note from a walk: kept thinking about AI copilots for small, specific professional
+niches. Write the smallest possible version that does one useful thing. Decide in two
+weeks whether Quillback has legs or whether it's just a fun idea.
+
+The problem
+-----------
+Reminder to self: local-first software that keeps user data on the device is the thing
+that actually matters here. When I talk to potential users, the frustration is never the
+headline feature - it's the ten minutes of setup before anyone gets value. I keep coming
+back to the belief that tools that reduce busywork for solo operators and freelancers.
+People keep running into the same wall: local-first software that keeps user data on the
+device. There's a real pull toward local-first software that keeps user data on the
+device, and most existing tools ignore it. If I forget everything else, don't forget that
+tools that reduce busywork for solo operators and freelancers.
+
+Who it's for
+------------
+If we tried to serve everyone we'd drown in scope. Ai copilots for small, specific
+professional niches is the wedge. A narrow user also makes the marketing obvious - you
+know exactly which community to show up in. If I forget everything else, don't forget that
+distribution through communities instead of paid ads. The first user is narrow on purpose:
+a part-time operator. Picking a tiny audience feels risky but it's the only way to say no
+to the wrong features. Reminder to self: local-first software that keeps user data on the
+device is the thing that actually matters here.
+
+Why now
+-------
+The risk is building for a trend instead of a need. I want to check that distinction hard
+before writing code. If I forget everything else, don't forget that AI copilots for small,
+specific professional niches. Five years ago this would have needed a team. Now one person
+can ship the core in a weekend. Two things changed: the tooling got cheap, and people
+started caring about tools that reduce busywork for solo operators and freelancers. Note
+from a walk: kept thinking about tools that reduce busywork for solo operators and
+freelancers.
+
+How it could make money
+-----------------------
+I keep circling pricing that stays free until a clear value moment, because charging too
+early scares off the exact people who would champion it. Plan: free until a clear value
+moment, then a small monthly fee. If I forget everything else, don't forget that local-
+first software that keeps user data on the device. Reminder to self: tools that reduce
+busywork for solo operators and freelancers is the thing that actually matters here.
+Honestly the revenue model is the part I'm least sure about, and pretending otherwise
+would be a mistake.
+
+Risks and doubts
+----------------
+If I forget everything else, don't forget that tools that reduce busywork for solo
+operators and freelancers. Biggest risk: I build features nobody asked for. Reminder to
+self: the danger of building features nobody asked for is the thing that actually matters
+here. There's also the open-source question - I want the goodwill, but goodwill doesn't
+pay rent. I should ship something rough and embarrassing early rather than polish in the
+dark for months.
+
+Next steps
+----------
+If I forget everything else, don't forget that distribution through communities instead of
+paid ads. Write the smallest possible version that does one useful thing. Reminder to
+self: local-first software that keeps user data on the device is the thing that actually
+matters here. Decide in two weeks whether Quillback has legs or whether it's just a fun
+idea. Find five real people with this problem and watch them try it without my help.
+
+The problem
+-----------
+I keep coming back to the belief that tools that reduce busywork for solo operators and
+freelancers. Reminder to self: AI copilots for small, specific professional niches is the
+thing that actually matters here. If I forget everything else, don't forget that tools
+that reduce busywork for solo operators and freelancers. People keep running into the same
+wall: local-first software that keeps user data on the device. There's a real pull toward
+local-first software that keeps user data on the device, and most existing tools ignore
+it. When I talk to potential users, the frustration is never the headline feature - it's
+the ten minutes of setup before anyone gets value.
+
+Who it's for
+------------
+Note from a walk: kept thinking about why onboarding friction quietly kills good products.
+A narrow user also makes the marketing obvious - you know exactly which community to show
+up in. The first user is narrow on purpose: a part-time operator. If we tried to serve
+everyone we'd drown in scope. Ai copilots for small, specific professional niches is the
+wedge. Picking a tiny audience feels risky but it's the only way to say no to the wrong
+features. If I forget everything else, don't forget that the danger of building features
+nobody asked for.
+
+Why now
+-------
+Two things changed: the tooling got cheap, and people started caring about tools that
+reduce busywork for solo operators and freelancers. Reminder to self: the danger of
+building features nobody asked for is the thing that actually matters here. Five years ago
+this would have needed a team. Now one person can ship the core in a weekend. The risk is
+building for a trend instead of a need. I want to check that distinction hard before
+writing code. If I forget everything else, don't forget that tools that reduce busywork
+for solo operators and freelancers.
+
+How it could make money
+-----------------------
+If I forget everything else, don't forget that AI copilots for small, specific
+professional niches. Honestly the revenue model is the part I'm least sure about, and
+pretending otherwise would be a mistake. I keep circling pricing that stays free until a
+clear value moment, because charging too early scares off the exact people who would
+champion it. Plan: free until a clear value moment, then a small monthly fee. Note from a
+walk: kept thinking about pricing that stays free until a clear value moment.
+
+Risks and doubts
+----------------
+Note from a walk: kept thinking about pricing that stays free until a clear value moment.
+I should ship something rough and embarrassing early rather than polish in the dark for
+months. Biggest risk: I build features nobody asked for. There's also the open-source
+question - I want the goodwill, but goodwill doesn't pay rent. Reminder to self: AI
+copilots for small, specific professional niches is the thing that actually matters here.
+
+Next steps
+----------
+Write the smallest possible version that does one useful thing. Find five real people with
+this problem and watch them try it without my help. Decide in two weeks whether Quillback
+has legs or whether it's just a fun idea. If I forget everything else, don't forget that
+AI copilots for small, specific professional niches. Reminder to self: tools that reduce
+busywork for solo operators and freelancers is the thing that actually matters here.
+
+The problem
+-----------
+People keep running into the same wall: local-first software that keeps user data on the
+device. When I talk to potential users, the frustration is never the headline feature -
+it's the ten minutes of setup before anyone gets value. I keep coming back to the belief
+that tools that reduce busywork for solo operators and freelancers. Note from a walk: kept
+thinking about tools that reduce busywork for solo operators and freelancers. Reminder to
+self: tools that reduce busywork for solo operators and freelancers is the thing that
+actually matters here. There's a real pull toward local-first software that keeps user
+data on the device, and most existing tools ignore it.
+
+Who it's for
+------------
+The first user is narrow on purpose: a part-time operator. If we tried to serve everyone
+we'd drown in scope. Ai copilots for small, specific professional niches is the wedge.
+Picking a tiny audience feels risky but it's the only way to say no to the wrong features.
+If I forget everything else, don't forget that the danger of building features nobody
+asked for. A narrow user also makes the marketing obvious - you know exactly which
+community to show up in. Note from a walk: kept thinking about distribution through
+communities instead of paid ads.
+
+Why now
+-------
+Reminder to self: local-first software that keeps user data on the device is the thing
+that actually matters here. The risk is building for a trend instead of a need. I want to
+check that distinction hard before writing code. Two things changed: the tooling got
+cheap, and people started caring about tools that reduce busywork for solo operators and
+freelancers. Five years ago this would have needed a team. Now one person can ship the
+core in a weekend. Note from a walk: kept thinking about distribution through communities
+instead of paid ads.
+
+How it could make money
+-----------------------
+Honestly the revenue model is the part I'm least sure about, and pretending otherwise
+would be a mistake. I keep circling pricing that stays free until a clear value moment,
+because charging too early scares off the exact people who would champion it. Reminder to
+self: local-first software that keeps user data on the device is the thing that actually
+matters here. If I forget everything else, don't forget that the danger of building
+features nobody asked for. Plan: free until a clear value moment, then a small monthly
+fee.
+
+Risks and doubts
+----------------
+I should ship something rough and embarrassing early rather than polish in the dark for
+months. Biggest risk: I build features nobody asked for. Note from a walk: kept thinking
+about pricing that stays free until a clear value moment. Reminder to self: the danger of
+building features nobody asked for is the thing that actually matters here. There's also
+the open-source question - I want the goodwill, but goodwill doesn't pay rent.
+
+Next steps
+----------
+Reminder to self: local-first software that keeps user data on the device is the thing
+that actually matters here. Note from a walk: kept thinking about tools that reduce
+busywork for solo operators and freelancers. Write the smallest possible version that does
+one useful thing. Decide in two weeks whether Quillback has legs or whether it's just a
+fun idea. Find five real people with this problem and watch them try it without my help.
+
+The problem
+-----------
+If I forget everything else, don't forget that distribution through communities instead of
+paid ads. When I talk to potential users, the frustration is never the headline feature -
+it's the ten minutes of setup before anyone gets value. People keep running into the same
+wall: local-first software that keeps user data on the device. There's a real pull toward
+local-first software that keeps user data on the device, and most existing tools ignore
+it. I keep coming back to the belief that tools that reduce busywork for solo operators
+and freelancers. Reminder to self: tools that reduce busywork for solo operators and
+freelancers is the thing that actually matters here.
+
+Who it's for
+------------
+If I forget everything else, don't forget that tools that reduce busywork for solo
+operators and freelancers. The first user is narrow on purpose: a part-time operator. If
+we tried to serve everyone we'd drown in scope. Ai copilots for small, specific
+professional niches is the wedge. Picking a tiny audience feels risky but it's the only
+way to say no to the wrong features. Note from a walk: kept thinking about pricing that
+stays free until a clear value moment. A narrow user also makes the marketing obvious -
+you know exactly which community to show up in.
+
+Why now
+-------
+The risk is building for a trend instead of a need. I want to check that distinction hard
+before writing code. Reminder to self: local-first software that keeps user data on the
+device is the thing that actually matters here. Five years ago this would have needed a
+team. Now one person can ship the core in a weekend. Two things changed: the tooling got
+cheap, and people started caring about tools that reduce busywork for solo operators and
+freelancers. If I forget everything else, don't forget that local-first software that
+keeps user data on the device.
+
+How it could make money
+-----------------------
+Plan: free until a clear value moment, then a small monthly fee. If I forget everything
+else, don't forget that tools that reduce busywork for solo operators and freelancers.
+Honestly the revenue model is the part I'm least sure about, and pretending otherwise
+would be a mistake. I keep circling pricing that stays free until a clear value moment,
+because charging too early scares off the exact people who would champion it. Reminder to
+self: distribution through communities instead of paid ads is the thing that actually
+matters here.
+
+Risks and doubts
+----------------
+Biggest risk: I build features nobody asked for. There's also the open-source question - I
+want the goodwill, but goodwill doesn't pay rent. I should ship something rough and
+embarrassing early rather than polish in the dark for months. If I forget everything else,
+don't forget that the danger of building features nobody asked for. Note from a walk: kept
+thinking about pricing that stays free until a clear value moment.
+
+Next steps
+----------
+Decide in two weeks whether Quillback has legs or whether it's just a fun idea. If I
+forget everything else, don't forget that the danger of building features nobody asked
+for. Reminder to self: the danger of building features nobody asked for is the thing that
+actually matters here. Write the smallest possible version that does one useful thing.
+Find five real people with this problem and watch them try it without my help.

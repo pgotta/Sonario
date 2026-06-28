@@ -1,0 +1,21 @@
+{
+  "_comment": "Add or override LLM providers here without editing any Python. Each entry is an OpenAI-compatible endpoint. After editing, restart Anchors Aweigh. Keys: label (shown in dropdown), base_url (must end in /v1 or equivalent), model, needs_key (true shows an API-key box), min_interval (seconds between calls; raise it for rate-limited bridges, 0 for local), note (shown under the dropdown).",
+  "providers": {
+    "lmstudio": {
+      "label": "LM Studio (free, local)",
+      "base_url": "http://localhost:1234/v1",
+      "model": "local-model",
+      "needs_key": false,
+      "min_interval": 0.0,
+      "note": "Free & local. Start LM Studio's local server and load a model first."
+    },
+    "openrouter": {
+      "label": "OpenRouter (many models, key)",
+      "base_url": "https://openrouter.ai/api/v1",
+      "model": "meta-llama/llama-3.3-70b-instruct",
+      "needs_key": true,
+      "min_interval": 0.5,
+      "note": "One key, hundreds of models (some free). Set the model to any OpenRouter model id."
+    }
+  }
+}

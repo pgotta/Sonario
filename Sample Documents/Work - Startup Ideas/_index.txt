@@ -1,0 +1,6 @@
+Startup Ideas - index
+=====================
+
+Loose collection of half-formed product ideas and working notes. Most of these share the
+same obsessions: local-first software, privacy as a feature, tools for solo operators, and
+not charging people too early. Treat everything here as a rough draft.

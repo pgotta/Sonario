@@ -1,0 +1,25 @@
+========================================================================
+  UPDATING SONARIO — DON'T LOSE YOUR GOOGLE DRIVE CREDENTIALS
+========================================================================
+
+Google only lets you download credentials.json ONCE. If you replace your
+whole Sonario folder with a new version, you could overwrite (delete) it
+and have to create a new Google OAuth client from scratch.
+
+SAFE WAY TO UPDATE to a newer Sonario:
+
+  Option A (easiest): copy the new files OVER your existing folder, and
+  when Windows asks about duplicates, choose
+      "Skip these files"  (or untick credentials.json / token.json).
+  Your credentials/ folder is never included in the download, so there's
+  nothing in the new version that should replace it.
+
+  Option B (safest): before updating, copy your
+      credentials\credentials.json   (and credentials\token.json if present)
+  somewhere safe. Update Sonario however you like, then copy those two
+  files back into the new credentials\ folder.
+
+The download never contains credentials.json or token.json — only an empty
+placeholder — so a clean extract won't touch your files. This note is just
+to protect you from a "replace everything" click.
+========================================================================

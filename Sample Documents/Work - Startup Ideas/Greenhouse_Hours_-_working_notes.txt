@@ -1,0 +1,289 @@
+Greenhouse Hours - working notes
+================================
+
+Author: Avery Quinn   |   Doc #04   |   status: rough draft
+
+The idea: Greenhouse Hours is a scheduling tool for community gardens and shared plots.
+
+
+The problem
+-----------
+Note from a walk: kept thinking about tools that reduce busywork for solo operators and
+freelancers. Reminder to self: pricing that stays free until a clear value moment is the
+thing that actually matters here. There's a real pull toward tools that reduce busywork
+for solo operators and freelancers, and most existing tools ignore it. When I talk to
+potential users, the frustration is never the headline feature - it's the ten minutes of
+setup before anyone gets value. People keep running into the same wall: distribution
+through communities instead of paid ads. I keep coming back to the belief that pricing
+that stays free until a clear value moment.
+
+Who it's for
+------------
+Picking a tiny audience feels risky but it's the only way to say no to the wrong features.
+If we tried to serve everyone we'd drown in scope. Pricing that stays free until a clear
+value moment is the wedge. The first user is narrow on purpose: a solo freelancer.
+Reminder to self: pricing that stays free until a clear value moment is the thing that
+actually matters here. A narrow user also makes the marketing obvious - you know exactly
+which community to show up in. If I forget everything else, don't forget that tools that
+reduce busywork for solo operators and freelancers.
+
+Why now
+-------
+If I forget everything else, don't forget that distribution through communities instead of
+paid ads. Five years ago this would have needed a team. Now one person can ship the core
+in a weekend. Note from a walk: kept thinking about AI copilots for small, specific
+professional niches. Two things changed: the tooling got cheap, and people started caring
+about distribution through communities instead of paid ads. The risk is building for a
+trend instead of a need. I want to check that distinction hard before writing code.
+
+How it could make money
+-----------------------
+Plan: one-time purchase with optional support. I keep circling pricing that stays free
+until a clear value moment, because charging too early scares off the exact people who
+would champion it. Note from a walk: kept thinking about distribution through communities
+instead of paid ads. Honestly the revenue model is the part I'm least sure about, and
+pretending otherwise would be a mistake. Reminder to self: pricing that stays free until a
+clear value moment is the thing that actually matters here.
+
+Risks and doubts
+----------------
+Biggest risk: I build features nobody asked for. Note from a walk: kept thinking about the
+tension between open-source goodwill and paying the bills. There's also the open-source
+question - I want the goodwill, but goodwill doesn't pay rent. If I forget everything
+else, don't forget that tools that reduce busywork for solo operators and freelancers. I
+should ship something rough and embarrassing early rather than polish in the dark for
+months.
+
+Next steps
+----------
+Note from a walk: kept thinking about local-first software that keeps user data on the
+device. If I forget everything else, don't forget that tools that reduce busywork for solo
+operators and freelancers. Decide in two weeks whether Greenhouse Hours has legs or
+whether it's just a fun idea. Find five real people with this problem and watch them try
+it without my help. Write the smallest possible version that does one useful thing.
+
+The problem
+-----------
+People keep running into the same wall: distribution through communities instead of paid
+ads. When I talk to potential users, the frustration is never the headline feature - it's
+the ten minutes of setup before anyone gets value. There's a real pull toward tools that
+reduce busywork for solo operators and freelancers, and most existing tools ignore it. I
+keep coming back to the belief that pricing that stays free until a clear value moment.
+Reminder to self: tools that reduce busywork for solo operators and freelancers is the
+thing that actually matters here. If I forget everything else, don't forget that pricing
+that stays free until a clear value moment.
+
+Who it's for
+------------
+Note from a walk: kept thinking about tools that reduce busywork for solo operators and
+freelancers. Reminder to self: pricing that stays free until a clear value moment is the
+thing that actually matters here. If we tried to serve everyone we'd drown in scope.
+Pricing that stays free until a clear value moment is the wedge. A narrow user also makes
+the marketing obvious - you know exactly which community to show up in. The first user is
+narrow on purpose: a solo freelancer. Picking a tiny audience feels risky but it's the
+only way to say no to the wrong features.
+
+Why now
+-------
+The risk is building for a trend instead of a need. I want to check that distinction hard
+before writing code. If I forget everything else, don't forget that pricing that stays
+free until a clear value moment. Two things changed: the tooling got cheap, and people
+started caring about distribution through communities instead of paid ads. Reminder to
+self: distribution through communities instead of paid ads is the thing that actually
+matters here. Five years ago this would have needed a team. Now one person can ship the
+core in a weekend.
+
+How it could make money
+-----------------------
+Honestly the revenue model is the part I'm least sure about, and pretending otherwise
+would be a mistake. I keep circling pricing that stays free until a clear value moment,
+because charging too early scares off the exact people who would champion it. Reminder to
+self: distribution through communities instead of paid ads is the thing that actually
+matters here. If I forget everything else, don't forget that pricing that stays free until
+a clear value moment. Plan: one-time purchase with optional support.
+
+Risks and doubts
+----------------
+I should ship something rough and embarrassing early rather than polish in the dark for
+months. Note from a walk: kept thinking about AI copilots for small, specific professional
+niches. Reminder to self: pricing that stays free until a clear value moment is the thing
+that actually matters here. There's also the open-source question - I want the goodwill,
+but goodwill doesn't pay rent. Biggest risk: I build features nobody asked for.
+
+Next steps
+----------
+Reminder to self: tools that reduce busywork for solo operators and freelancers is the
+thing that actually matters here. Decide in two weeks whether Greenhouse Hours has legs or
+whether it's just a fun idea. Write the smallest possible version that does one useful
+thing. Find five real people with this problem and watch them try it without my help. Note
+from a walk: kept thinking about tools that reduce busywork for solo operators and
+freelancers.
+
+The problem
+-----------
+People keep running into the same wall: distribution through communities instead of paid
+ads. There's a real pull toward tools that reduce busywork for solo operators and
+freelancers, and most existing tools ignore it. Note from a walk: kept thinking about why
+onboarding friction quietly kills good products. If I forget everything else, don't forget
+that tools that reduce busywork for solo operators and freelancers. I keep coming back to
+the belief that pricing that stays free until a clear value moment. When I talk to
+potential users, the frustration is never the headline feature - it's the ten minutes of
+setup before anyone gets value.
+
+Who it's for
+------------
+Reminder to self: pricing that stays free until a clear value moment is the thing that
+actually matters here. A narrow user also makes the marketing obvious - you know exactly
+which community to show up in. If we tried to serve everyone we'd drown in scope. Pricing
+that stays free until a clear value moment is the wedge. Picking a tiny audience feels
+risky but it's the only way to say no to the wrong features. The first user is narrow on
+purpose: a solo freelancer. If I forget everything else, don't forget that tools that
+reduce busywork for solo operators and freelancers.
+
+Why now
+-------
+Note from a walk: kept thinking about pricing that stays free until a clear value moment.
+Reminder to self: pricing that stays free until a clear value moment is the thing that
+actually matters here. The risk is building for a trend instead of a need. I want to check
+that distinction hard before writing code. Two things changed: the tooling got cheap, and
+people started caring about distribution through communities instead of paid ads. Five
+years ago this would have needed a team. Now one person can ship the core in a weekend.
+
+How it could make money
+-----------------------
+If I forget everything else, don't forget that distribution through communities instead of
+paid ads. Plan: one-time purchase with optional support. I keep circling pricing that
+stays free until a clear value moment, because charging too early scares off the exact
+people who would champion it. Honestly the revenue model is the part I'm least sure about,
+and pretending otherwise would be a mistake. Reminder to self: tools that reduce busywork
+for solo operators and freelancers is the thing that actually matters here.
+
+Risks and doubts
+----------------
+There's also the open-source question - I want the goodwill, but goodwill doesn't pay
+rent. I should ship something rough and embarrassing early rather than polish in the dark
+for months. If I forget everything else, don't forget that pricing that stays free until a
+clear value moment. Note from a walk: kept thinking about privacy as a feature rather than
+an afterthought. Biggest risk: I build features nobody asked for.
+
+Next steps
+----------
+Write the smallest possible version that does one useful thing. If I forget everything
+else, don't forget that pricing that stays free until a clear value moment. Find five real
+people with this problem and watch them try it without my help. Decide in two weeks
+whether Greenhouse Hours has legs or whether it's just a fun idea. Note from a walk: kept
+thinking about pricing that stays free until a clear value moment.
+
+The problem
+-----------
+People keep running into the same wall: distribution through communities instead of paid
+ads. Reminder to self: pricing that stays free until a clear value moment is the thing
+that actually matters here. I keep coming back to the belief that pricing that stays free
+until a clear value moment. When I talk to potential users, the frustration is never the
+headline feature - it's the ten minutes of setup before anyone gets value. There's a real
+pull toward tools that reduce busywork for solo operators and freelancers, and most
+existing tools ignore it. If I forget everything else, don't forget that pricing that
+stays free until a clear value moment.
+
+Who it's for
+------------
+Picking a tiny audience feels risky but it's the only way to say no to the wrong features.
+The first user is narrow on purpose: a solo freelancer. If I forget everything else, don't
+forget that pricing that stays free until a clear value moment. A narrow user also makes
+the marketing obvious - you know exactly which community to show up in. Reminder to self:
+tools that reduce busywork for solo operators and freelancers is the thing that actually
+matters here. If we tried to serve everyone we'd drown in scope. Pricing that stays free
+until a clear value moment is the wedge.
+
+Why now
+-------
+Reminder to self: distribution through communities instead of paid ads is the thing that
+actually matters here. Five years ago this would have needed a team. Now one person can
+ship the core in a weekend. Two things changed: the tooling got cheap, and people started
+caring about distribution through communities instead of paid ads. The risk is building
+for a trend instead of a need. I want to check that distinction hard before writing code.
+If I forget everything else, don't forget that tools that reduce busywork for solo
+operators and freelancers.
+
+How it could make money
+-----------------------
+Honestly the revenue model is the part I'm least sure about, and pretending otherwise
+would be a mistake. If I forget everything else, don't forget that distribution through
+communities instead of paid ads. Reminder to self: distribution through communities
+instead of paid ads is the thing that actually matters here. Plan: one-time purchase with
+optional support. I keep circling pricing that stays free until a clear value moment,
+because charging too early scares off the exact people who would champion it.
+
+Risks and doubts
+----------------
+I should ship something rough and embarrassing early rather than polish in the dark for
+months. Biggest risk: I build features nobody asked for. Note from a walk: kept thinking
+about pricing that stays free until a clear value moment. There's also the open-source
+question - I want the goodwill, but goodwill doesn't pay rent. If I forget everything
+else, don't forget that tools that reduce busywork for solo operators and freelancers.
+
+Next steps
+----------
+Find five real people with this problem and watch them try it without my help. Write the
+smallest possible version that does one useful thing. Decide in two weeks whether
+Greenhouse Hours has legs or whether it's just a fun idea. Note from a walk: kept thinking
+about local-first software that keeps user data on the device. If I forget everything
+else, don't forget that pricing that stays free until a clear value moment.
+
+The problem
+-----------
+There's a real pull toward tools that reduce busywork for solo operators and freelancers,
+and most existing tools ignore it. I keep coming back to the belief that pricing that
+stays free until a clear value moment. People keep running into the same wall:
+distribution through communities instead of paid ads. When I talk to potential users, the
+frustration is never the headline feature - it's the ten minutes of setup before anyone
+gets value. Note from a walk: kept thinking about local-first software that keeps user
+data on the device. If I forget everything else, don't forget that tools that reduce
+busywork for solo operators and freelancers.
+
+Who it's for
+------------
+If we tried to serve everyone we'd drown in scope. Pricing that stays free until a clear
+value moment is the wedge. The first user is narrow on purpose: a solo freelancer. If I
+forget everything else, don't forget that pricing that stays free until a clear value
+moment. Reminder to self: tools that reduce busywork for solo operators and freelancers is
+the thing that actually matters here. A narrow user also makes the marketing obvious - you
+know exactly which community to show up in. Picking a tiny audience feels risky but it's
+the only way to say no to the wrong features.
+
+Why now
+-------
+Note from a walk: kept thinking about shipping a rough version early to learn from real
+users. Two things changed: the tooling got cheap, and people started caring about
+distribution through communities instead of paid ads. If I forget everything else, don't
+forget that distribution through communities instead of paid ads. Five years ago this
+would have needed a team. Now one person can ship the core in a weekend. The risk is
+building for a trend instead of a need. I want to check that distinction hard before
+writing code.
+
+How it could make money
+-----------------------
+Honestly the revenue model is the part I'm least sure about, and pretending otherwise
+would be a mistake. I keep circling pricing that stays free until a clear value moment,
+because charging too early scares off the exact people who would champion it. Plan: one-
+time purchase with optional support. If I forget everything else, don't forget that
+pricing that stays free until a clear value moment. Note from a walk: kept thinking about
+why onboarding friction quietly kills good products.
+
+Risks and doubts
+----------------
+Reminder to self: distribution through communities instead of paid ads is the thing that
+actually matters here. If I forget everything else, don't forget that pricing that stays
+free until a clear value moment. I should ship something rough and embarrassing early
+rather than polish in the dark for months. Biggest risk: I build features nobody asked
+for. There's also the open-source question - I want the goodwill, but goodwill doesn't pay
+rent.
+
+Next steps
+----------
+Find five real people with this problem and watch them try it without my help. Decide in
+two weeks whether Greenhouse Hours has legs or whether it's just a fun idea. If I forget
+everything else, don't forget that pricing that stays free until a clear value moment.
+Reminder to self: tools that reduce busywork for solo operators and freelancers is the
+thing that actually matters here. Write the smallest possible version that does one useful
+thing.

@@ -1,0 +1,293 @@
+MeterMate - working notes
+=========================
+
+Author: Avery Quinn   |   Doc #01   |   status: rough draft
+
+The idea: MeterMate is a utility-bill analyzer that flags anomalies in household energy
+use.
+
+
+The problem
+-----------
+I keep coming back to the belief that pricing that stays free until a clear value moment.
+When I talk to potential users, the frustration is never the headline feature - it's the
+ten minutes of setup before anyone gets value. Note from a walk: kept thinking about
+pricing that stays free until a clear value moment. People keep running into the same
+wall: AI copilots for small, specific professional niches. Reminder to self: the tension
+between open-source goodwill and paying the bills is the thing that actually matters here.
+There's a real pull toward the tension between open-source goodwill and paying the bills,
+and most existing tools ignore it.
+
+Who it's for
+------------
+Reminder to self: AI copilots for small, specific professional niches is the thing that
+actually matters here. If we tried to serve everyone we'd drown in scope. The danger of
+building features nobody asked for is the wedge. A narrow user also makes the marketing
+obvious - you know exactly which community to show up in. Note from a walk: kept thinking
+about distribution through communities instead of paid ads. The first user is narrow on
+purpose: a solo freelancer. Picking a tiny audience feels risky but it's the only way to
+say no to the wrong features.
+
+Why now
+-------
+Five years ago this would have needed a team. Now one person can ship the core in a
+weekend. Reminder to self: the tension between open-source goodwill and paying the bills
+is the thing that actually matters here. Two things changed: the tooling got cheap, and
+people started caring about privacy as a feature rather than an afterthought. Note from a
+walk: kept thinking about privacy as a feature rather than an afterthought. The risk is
+building for a trend instead of a need. I want to check that distinction hard before
+writing code.
+
+How it could make money
+-----------------------
+Plan: free core with a paid team tier. If I forget everything else, don't forget that
+distribution through communities instead of paid ads. Note from a walk: kept thinking
+about pricing that stays free until a clear value moment. Honestly the revenue model is
+the part I'm least sure about, and pretending otherwise would be a mistake. I keep
+circling pricing that stays free until a clear value moment, because charging too early
+scares off the exact people who would champion it.
+
+Risks and doubts
+----------------
+I should ship something rough and embarrassing early rather than polish in the dark for
+months. Note from a walk: kept thinking about privacy as a feature rather than an
+afterthought. Biggest risk: I never find the right community to launch in. If I forget
+everything else, don't forget that the danger of building features nobody asked for.
+There's also the open-source question - I want the goodwill, but goodwill doesn't pay
+rent.
+
+Next steps
+----------
+Reminder to self: AI copilots for small, specific professional niches is the thing that
+actually matters here. Note from a walk: kept thinking about distribution through
+communities instead of paid ads. Decide in two weeks whether MeterMate has legs or whether
+it's just a fun idea. Write the smallest possible version that does one useful thing. Find
+five real people with this problem and watch them try it without my help.
+
+The problem
+-----------
+Reminder to self: the danger of building features nobody asked for is the thing that
+actually matters here. Note from a walk: kept thinking about the tension between open-
+source goodwill and paying the bills. People keep running into the same wall: AI copilots
+for small, specific professional niches. There's a real pull toward the tension between
+open-source goodwill and paying the bills, and most existing tools ignore it. I keep
+coming back to the belief that pricing that stays free until a clear value moment. When I
+talk to potential users, the frustration is never the headline feature - it's the ten
+minutes of setup before anyone gets value.
+
+Who it's for
+------------
+Picking a tiny audience feels risky but it's the only way to say no to the wrong features.
+Note from a walk: kept thinking about distribution through communities instead of paid
+ads. If we tried to serve everyone we'd drown in scope. The danger of building features
+nobody asked for is the wedge. The first user is narrow on purpose: a solo freelancer.
+Reminder to self: the tension between open-source goodwill and paying the bills is the
+thing that actually matters here. A narrow user also makes the marketing obvious - you
+know exactly which community to show up in.
+
+Why now
+-------
+Five years ago this would have needed a team. Now one person can ship the core in a
+weekend. Reminder to self: the danger of building features nobody asked for is the thing
+that actually matters here. Two things changed: the tooling got cheap, and people started
+caring about privacy as a feature rather than an afterthought. Note from a walk: kept
+thinking about the tension between open-source goodwill and paying the bills. The risk is
+building for a trend instead of a need. I want to check that distinction hard before
+writing code.
+
+How it could make money
+-----------------------
+Note from a walk: kept thinking about the tension between open-source goodwill and paying
+the bills. If I forget everything else, don't forget that distribution through communities
+instead of paid ads. I keep circling pricing that stays free until a clear value moment,
+because charging too early scares off the exact people who would champion it. Plan: free
+core with a paid team tier. Honestly the revenue model is the part I'm least sure about,
+and pretending otherwise would be a mistake.
+
+Risks and doubts
+----------------
+There's also the open-source question - I want the goodwill, but goodwill doesn't pay
+rent. Biggest risk: I never find the right community to launch in. If I forget everything
+else, don't forget that distribution through communities instead of paid ads. Note from a
+walk: kept thinking about tools that reduce busywork for solo operators and freelancers. I
+should ship something rough and embarrassing early rather than polish in the dark for
+months.
+
+Next steps
+----------
+If I forget everything else, don't forget that the tension between open-source goodwill
+and paying the bills. Find five real people with this problem and watch them try it
+without my help. Write the smallest possible version that does one useful thing. Reminder
+to self: the danger of building features nobody asked for is the thing that actually
+matters here. Decide in two weeks whether MeterMate has legs or whether it's just a fun
+idea.
+
+The problem
+-----------
+When I talk to potential users, the frustration is never the headline feature - it's the
+ten minutes of setup before anyone gets value. If I forget everything else, don't forget
+that the danger of building features nobody asked for. Note from a walk: kept thinking
+about tools that reduce busywork for solo operators and freelancers. There's a real pull
+toward the tension between open-source goodwill and paying the bills, and most existing
+tools ignore it. I keep coming back to the belief that pricing that stays free until a
+clear value moment. People keep running into the same wall: AI copilots for small,
+specific professional niches.
+
+Who it's for
+------------
+If I forget everything else, don't forget that distribution through communities instead of
+paid ads. The first user is narrow on purpose: a solo freelancer. If we tried to serve
+everyone we'd drown in scope. The danger of building features nobody asked for is the
+wedge. Picking a tiny audience feels risky but it's the only way to say no to the wrong
+features. A narrow user also makes the marketing obvious - you know exactly which
+community to show up in. Note from a walk: kept thinking about the danger of building
+features nobody asked for.
+
+Why now
+-------
+Reminder to self: AI copilots for small, specific professional niches is the thing that
+actually matters here. The risk is building for a trend instead of a need. I want to check
+that distinction hard before writing code. Five years ago this would have needed a team.
+Now one person can ship the core in a weekend. If I forget everything else, don't forget
+that the tension between open-source goodwill and paying the bills. Two things changed:
+the tooling got cheap, and people started caring about privacy as a feature rather than an
+afterthought.
+
+How it could make money
+-----------------------
+Plan: free core with a paid team tier. Honestly the revenue model is the part I'm least
+sure about, and pretending otherwise would be a mistake. I keep circling pricing that
+stays free until a clear value moment, because charging too early scares off the exact
+people who would champion it. Reminder to self: the tension between open-source goodwill
+and paying the bills is the thing that actually matters here. If I forget everything else,
+don't forget that the tension between open-source goodwill and paying the bills.
+
+Risks and doubts
+----------------
+Biggest risk: I never find the right community to launch in. There's also the open-source
+question - I want the goodwill, but goodwill doesn't pay rent. Reminder to self: the
+tension between open-source goodwill and paying the bills is the thing that actually
+matters here. If I forget everything else, don't forget that AI copilots for small,
+specific professional niches. I should ship something rough and embarrassing early rather
+than polish in the dark for months.
+
+Next steps
+----------
+Write the smallest possible version that does one useful thing. Note from a walk: kept
+thinking about why onboarding friction quietly kills good products. Decide in two weeks
+whether MeterMate has legs or whether it's just a fun idea. Find five real people with
+this problem and watch them try it without my help. Reminder to self: AI copilots for
+small, specific professional niches is the thing that actually matters here.
+
+The problem
+-----------
+There's a real pull toward the tension between open-source goodwill and paying the bills,
+and most existing tools ignore it. If I forget everything else, don't forget that the
+tension between open-source goodwill and paying the bills. People keep running into the
+same wall: AI copilots for small, specific professional niches. Reminder to self: the
+tension between open-source goodwill and paying the bills is the thing that actually
+matters here. When I talk to potential users, the frustration is never the headline
+feature - it's the ten minutes of setup before anyone gets value. I keep coming back to
+the belief that pricing that stays free until a clear value moment.
+
+Who it's for
+------------
+A narrow user also makes the marketing obvious - you know exactly which community to show
+up in. Reminder to self: AI copilots for small, specific professional niches is the thing
+that actually matters here. Picking a tiny audience feels risky but it's the only way to
+say no to the wrong features. The first user is narrow on purpose: a solo freelancer. Note
+from a walk: kept thinking about AI copilots for small, specific professional niches. If
+we tried to serve everyone we'd drown in scope. The danger of building features nobody
+asked for is the wedge.
+
+Why now
+-------
+The risk is building for a trend instead of a need. I want to check that distinction hard
+before writing code. Five years ago this would have needed a team. Now one person can ship
+the core in a weekend. Note from a walk: kept thinking about shipping a rough version
+early to learn from real users. If I forget everything else, don't forget that AI copilots
+for small, specific professional niches. Two things changed: the tooling got cheap, and
+people started caring about privacy as a feature rather than an afterthought.
+
+How it could make money
+-----------------------
+Note from a walk: kept thinking about privacy as a feature rather than an afterthought. I
+keep circling pricing that stays free until a clear value moment, because charging too
+early scares off the exact people who would champion it. Reminder to self: the danger of
+building features nobody asked for is the thing that actually matters here. Honestly the
+revenue model is the part I'm least sure about, and pretending otherwise would be a
+mistake. Plan: free core with a paid team tier.
+
+Risks and doubts
+----------------
+Biggest risk: I never find the right community to launch in. Reminder to self: the tension
+between open-source goodwill and paying the bills is the thing that actually matters here.
+There's also the open-source question - I want the goodwill, but goodwill doesn't pay
+rent. I should ship something rough and embarrassing early rather than polish in the dark
+for months. Note from a walk: kept thinking about why onboarding friction quietly kills
+good products.
+
+Next steps
+----------
+If I forget everything else, don't forget that distribution through communities instead of
+paid ads. Decide in two weeks whether MeterMate has legs or whether it's just a fun idea.
+Find five real people with this problem and watch them try it without my help. Reminder to
+self: the tension between open-source goodwill and paying the bills is the thing that
+actually matters here. Write the smallest possible version that does one useful thing.
+
+The problem
+-----------
+There's a real pull toward the tension between open-source goodwill and paying the bills,
+and most existing tools ignore it. Reminder to self: distribution through communities
+instead of paid ads is the thing that actually matters here. People keep running into the
+same wall: AI copilots for small, specific professional niches. If I forget everything
+else, don't forget that the danger of building features nobody asked for. I keep coming
+back to the belief that pricing that stays free until a clear value moment. When I talk to
+potential users, the frustration is never the headline feature - it's the ten minutes of
+setup before anyone gets value.
+
+Who it's for
+------------
+If we tried to serve everyone we'd drown in scope. The danger of building features nobody
+asked for is the wedge. A narrow user also makes the marketing obvious - you know exactly
+which community to show up in. Note from a walk: kept thinking about why onboarding
+friction quietly kills good products. The first user is narrow on purpose: a solo
+freelancer. Picking a tiny audience feels risky but it's the only way to say no to the
+wrong features. If I forget everything else, don't forget that the tension between open-
+source goodwill and paying the bills.
+
+Why now
+-------
+Two things changed: the tooling got cheap, and people started caring about privacy as a
+feature rather than an afterthought. Note from a walk: kept thinking about local-first
+software that keeps user data on the device. Five years ago this would have needed a team.
+Now one person can ship the core in a weekend. The risk is building for a trend instead of
+a need. I want to check that distinction hard before writing code. Reminder to self: the
+tension between open-source goodwill and paying the bills is the thing that actually
+matters here.
+
+How it could make money
+-----------------------
+I keep circling pricing that stays free until a clear value moment, because charging too
+early scares off the exact people who would champion it. Note from a walk: kept thinking
+about privacy as a feature rather than an afterthought. Plan: free core with a paid team
+tier. Reminder to self: AI copilots for small, specific professional niches is the thing
+that actually matters here. Honestly the revenue model is the part I'm least sure about,
+and pretending otherwise would be a mistake.
+
+Risks and doubts
+----------------
+Reminder to self: distribution through communities instead of paid ads is the thing that
+actually matters here. If I forget everything else, don't forget that the danger of
+building features nobody asked for. There's also the open-source question - I want the
+goodwill, but goodwill doesn't pay rent. I should ship something rough and embarrassing
+early rather than polish in the dark for months. Biggest risk: I never find the right
+community to launch in.
+
+Next steps
+----------
+Find five real people with this problem and watch them try it without my help. Write the
+smallest possible version that does one useful thing. Reminder to self: the tension
+between open-source goodwill and paying the bills is the thing that actually matters here.
+Decide in two weeks whether MeterMate has legs or whether it's just a fun idea. Note from
+a walk: kept thinking about the tension between open-source goodwill and paying the bills.

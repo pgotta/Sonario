@@ -1,0 +1,291 @@
+Cadence - working notes
+=======================
+
+Author: Avery Quinn   |   Doc #07   |   status: rough draft
+
+The idea: Cadence is a habit tracker that adapts targets to how a week is actually going.
+
+
+The problem
+-----------
+Reminder to self: shipping a rough version early to learn from real users is the thing
+that actually matters here. There's a real pull toward the tension between open-source
+goodwill and paying the bills, and most existing tools ignore it. If I forget everything
+else, don't forget that shipping a rough version early to learn from real users. I keep
+coming back to the belief that distribution through communities instead of paid ads.
+People keep running into the same wall: pricing that stays free until a clear value
+moment. When I talk to potential users, the frustration is never the headline feature -
+it's the ten minutes of setup before anyone gets value.
+
+Who it's for
+------------
+Reminder to self: pricing that stays free until a clear value moment is the thing that
+actually matters here. Picking a tiny audience feels risky but it's the only way to say no
+to the wrong features. If I forget everything else, don't forget that shipping a rough
+version early to learn from real users. The first user is narrow on purpose: a two-person
+shop. If we tried to serve everyone we'd drown in scope. The tension between open-source
+goodwill and paying the bills is the wedge. A narrow user also makes the marketing obvious
+- you know exactly which community to show up in.
+
+Why now
+-------
+Two things changed: the tooling got cheap, and people started caring about AI copilots for
+small, specific professional niches. Five years ago this would have needed a team. Now one
+person can ship the core in a weekend. If I forget everything else, don't forget that
+shipping a rough version early to learn from real users. Note from a walk: kept thinking
+about shipping a rough version early to learn from real users. The risk is building for a
+trend instead of a need. I want to check that distinction hard before writing code.
+
+How it could make money
+-----------------------
+Note from a walk: kept thinking about AI copilots for small, specific professional niches.
+Plan: pay-what-you-want with a suggested price. Honestly the revenue model is the part I'm
+least sure about, and pretending otherwise would be a mistake. Reminder to self: local-
+first software that keeps user data on the device is the thing that actually matters here.
+I keep circling pricing that stays free until a clear value moment, because charging too
+early scares off the exact people who would champion it.
+
+Risks and doubts
+----------------
+I should ship something rough and embarrassing early rather than polish in the dark for
+months. Reminder to self: local-first software that keeps user data on the device is the
+thing that actually matters here. Biggest risk: I build features nobody asked for. If I
+forget everything else, don't forget that the tension between open-source goodwill and
+paying the bills. There's also the open-source question - I want the goodwill, but
+goodwill doesn't pay rent.
+
+Next steps
+----------
+Find five real people with this problem and watch them try it without my help. Write the
+smallest possible version that does one useful thing. Decide in two weeks whether Cadence
+has legs or whether it's just a fun idea. Reminder to self: local-first software that
+keeps user data on the device is the thing that actually matters here. If I forget
+everything else, don't forget that the tension between open-source goodwill and paying the
+bills.
+
+The problem
+-----------
+If I forget everything else, don't forget that local-first software that keeps user data
+on the device. I keep coming back to the belief that distribution through communities
+instead of paid ads. There's a real pull toward the tension between open-source goodwill
+and paying the bills, and most existing tools ignore it. Note from a walk: kept thinking
+about why onboarding friction quietly kills good products. When I talk to potential users,
+the frustration is never the headline feature - it's the ten minutes of setup before
+anyone gets value. People keep running into the same wall: pricing that stays free until a
+clear value moment.
+
+Who it's for
+------------
+If we tried to serve everyone we'd drown in scope. The tension between open-source
+goodwill and paying the bills is the wedge. If I forget everything else, don't forget that
+shipping a rough version early to learn from real users. The first user is narrow on
+purpose: a two-person shop. Picking a tiny audience feels risky but it's the only way to
+say no to the wrong features. Note from a walk: kept thinking about why onboarding
+friction quietly kills good products. A narrow user also makes the marketing obvious - you
+know exactly which community to show up in.
+
+Why now
+-------
+If I forget everything else, don't forget that the tension between open-source goodwill
+and paying the bills. The risk is building for a trend instead of a need. I want to check
+that distinction hard before writing code. Two things changed: the tooling got cheap, and
+people started caring about AI copilots for small, specific professional niches. Reminder
+to self: shipping a rough version early to learn from real users is the thing that
+actually matters here. Five years ago this would have needed a team. Now one person can
+ship the core in a weekend.
+
+How it could make money
+-----------------------
+If I forget everything else, don't forget that shipping a rough version early to learn
+from real users. Plan: pay-what-you-want with a suggested price. I keep circling pricing
+that stays free until a clear value moment, because charging too early scares off the
+exact people who would champion it. Honestly the revenue model is the part I'm least sure
+about, and pretending otherwise would be a mistake. Reminder to self: local-first software
+that keeps user data on the device is the thing that actually matters here.
+
+Risks and doubts
+----------------
+I should ship something rough and embarrassing early rather than polish in the dark for
+months. If I forget everything else, don't forget that shipping a rough version early to
+learn from real users. Biggest risk: I build features nobody asked for. Reminder to self:
+local-first software that keeps user data on the device is the thing that actually matters
+here. There's also the open-source question - I want the goodwill, but goodwill doesn't
+pay rent.
+
+Next steps
+----------
+Find five real people with this problem and watch them try it without my help. Decide in
+two weeks whether Cadence has legs or whether it's just a fun idea. Write the smallest
+possible version that does one useful thing. If I forget everything else, don't forget
+that shipping a rough version early to learn from real users. Reminder to self: the
+tension between open-source goodwill and paying the bills is the thing that actually
+matters here.
+
+The problem
+-----------
+I keep coming back to the belief that distribution through communities instead of paid
+ads. If I forget everything else, don't forget that local-first software that keeps user
+data on the device. When I talk to potential users, the frustration is never the headline
+feature - it's the ten minutes of setup before anyone gets value. Note from a walk: kept
+thinking about the danger of building features nobody asked for. People keep running into
+the same wall: pricing that stays free until a clear value moment. There's a real pull
+toward the tension between open-source goodwill and paying the bills, and most existing
+tools ignore it.
+
+Who it's for
+------------
+Note from a walk: kept thinking about shipping a rough version early to learn from real
+users. If I forget everything else, don't forget that pricing that stays free until a
+clear value moment. If we tried to serve everyone we'd drown in scope. The tension between
+open-source goodwill and paying the bills is the wedge. Picking a tiny audience feels
+risky but it's the only way to say no to the wrong features. The first user is narrow on
+purpose: a two-person shop. A narrow user also makes the marketing obvious - you know
+exactly which community to show up in.
+
+Why now
+-------
+If I forget everything else, don't forget that the tension between open-source goodwill
+and paying the bills. Note from a walk: kept thinking about AI copilots for small,
+specific professional niches. Two things changed: the tooling got cheap, and people
+started caring about AI copilots for small, specific professional niches. The risk is
+building for a trend instead of a need. I want to check that distinction hard before
+writing code. Five years ago this would have needed a team. Now one person can ship the
+core in a weekend.
+
+How it could make money
+-----------------------
+Honestly the revenue model is the part I'm least sure about, and pretending otherwise
+would be a mistake. I keep circling pricing that stays free until a clear value moment,
+because charging too early scares off the exact people who would champion it. If I forget
+everything else, don't forget that pricing that stays free until a clear value moment.
+Plan: pay-what-you-want with a suggested price. Note from a walk: kept thinking about
+privacy as a feature rather than an afterthought.
+
+Risks and doubts
+----------------
+Reminder to self: shipping a rough version early to learn from real users is the thing
+that actually matters here. Biggest risk: I build features nobody asked for. Note from a
+walk: kept thinking about privacy as a feature rather than an afterthought. I should ship
+something rough and embarrassing early rather than polish in the dark for months. There's
+also the open-source question - I want the goodwill, but goodwill doesn't pay rent.
+
+Next steps
+----------
+Note from a walk: kept thinking about the tension between open-source goodwill and paying
+the bills. Write the smallest possible version that does one useful thing. Decide in two
+weeks whether Cadence has legs or whether it's just a fun idea. Find five real people with
+this problem and watch them try it without my help. If I forget everything else, don't
+forget that pricing that stays free until a clear value moment.
+
+The problem
+-----------
+Note from a walk: kept thinking about AI copilots for small, specific professional niches.
+When I talk to potential users, the frustration is never the headline feature - it's the
+ten minutes of setup before anyone gets value. I keep coming back to the belief that
+distribution through communities instead of paid ads. People keep running into the same
+wall: pricing that stays free until a clear value moment. There's a real pull toward the
+tension between open-source goodwill and paying the bills, and most existing tools ignore
+it. Reminder to self: the tension between open-source goodwill and paying the bills is the
+thing that actually matters here.
+
+Who it's for
+------------
+A narrow user also makes the marketing obvious - you know exactly which community to show
+up in. If I forget everything else, don't forget that the tension between open-source
+goodwill and paying the bills. Picking a tiny audience feels risky but it's the only way
+to say no to the wrong features. If we tried to serve everyone we'd drown in scope. The
+tension between open-source goodwill and paying the bills is the wedge. Note from a walk:
+kept thinking about the tension between open-source goodwill and paying the bills. The
+first user is narrow on purpose: a two-person shop.
+
+Why now
+-------
+The risk is building for a trend instead of a need. I want to check that distinction hard
+before writing code. Reminder to self: pricing that stays free until a clear value moment
+is the thing that actually matters here. Two things changed: the tooling got cheap, and
+people started caring about AI copilots for small, specific professional niches. Five
+years ago this would have needed a team. Now one person can ship the core in a weekend.
+Note from a walk: kept thinking about shipping a rough version early to learn from real
+users.
+
+How it could make money
+-----------------------
+If I forget everything else, don't forget that pricing that stays free until a clear value
+moment. Honestly the revenue model is the part I'm least sure about, and pretending
+otherwise would be a mistake. I keep circling pricing that stays free until a clear value
+moment, because charging too early scares off the exact people who would champion it.
+Plan: pay-what-you-want with a suggested price. Note from a walk: kept thinking about
+tools that reduce busywork for solo operators and freelancers.
+
+Risks and doubts
+----------------
+Reminder to self: pricing that stays free until a clear value moment is the thing that
+actually matters here. Note from a walk: kept thinking about the danger of building
+features nobody asked for. Biggest risk: I build features nobody asked for. I should ship
+something rough and embarrassing early rather than polish in the dark for months. There's
+also the open-source question - I want the goodwill, but goodwill doesn't pay rent.
+
+Next steps
+----------
+Reminder to self: pricing that stays free until a clear value moment is the thing that
+actually matters here. Note from a walk: kept thinking about shipping a rough version
+early to learn from real users. Decide in two weeks whether Cadence has legs or whether
+it's just a fun idea. Find five real people with this problem and watch them try it
+without my help. Write the smallest possible version that does one useful thing.
+
+The problem
+-----------
+There's a real pull toward the tension between open-source goodwill and paying the bills,
+and most existing tools ignore it. I keep coming back to the belief that distribution
+through communities instead of paid ads. Reminder to self: shipping a rough version early
+to learn from real users is the thing that actually matters here. People keep running into
+the same wall: pricing that stays free until a clear value moment. When I talk to
+potential users, the frustration is never the headline feature - it's the ten minutes of
+setup before anyone gets value. If I forget everything else, don't forget that pricing
+that stays free until a clear value moment.
+
+Who it's for
+------------
+A narrow user also makes the marketing obvious - you know exactly which community to show
+up in. Note from a walk: kept thinking about distribution through communities instead of
+paid ads. Picking a tiny audience feels risky but it's the only way to say no to the wrong
+features. If I forget everything else, don't forget that shipping a rough version early to
+learn from real users. If we tried to serve everyone we'd drown in scope. The tension
+between open-source goodwill and paying the bills is the wedge. The first user is narrow
+on purpose: a two-person shop.
+
+Why now
+-------
+The risk is building for a trend instead of a need. I want to check that distinction hard
+before writing code. Two things changed: the tooling got cheap, and people started caring
+about AI copilots for small, specific professional niches. Reminder to self: shipping a
+rough version early to learn from real users is the thing that actually matters here. Five
+years ago this would have needed a team. Now one person can ship the core in a weekend. If
+I forget everything else, don't forget that local-first software that keeps user data on
+the device.
+
+How it could make money
+-----------------------
+Honestly the revenue model is the part I'm least sure about, and pretending otherwise
+would be a mistake. I keep circling pricing that stays free until a clear value moment,
+because charging too early scares off the exact people who would champion it. Plan: pay-
+what-you-want with a suggested price. Note from a walk: kept thinking about why onboarding
+friction quietly kills good products. If I forget everything else, don't forget that
+local-first software that keeps user data on the device.
+
+Risks and doubts
+----------------
+There's also the open-source question - I want the goodwill, but goodwill doesn't pay
+rent. Biggest risk: I build features nobody asked for. Reminder to self: the tension
+between open-source goodwill and paying the bills is the thing that actually matters here.
+If I forget everything else, don't forget that pricing that stays free until a clear value
+moment. I should ship something rough and embarrassing early rather than polish in the
+dark for months.
+
+Next steps
+----------
+Note from a walk: kept thinking about the tension between open-source goodwill and paying
+the bills. Write the smallest possible version that does one useful thing. Find five real
+people with this problem and watch them try it without my help. Decide in two weeks
+whether Cadence has legs or whether it's just a fun idea. Reminder to self: pricing that
+stays free until a clear value moment is the thing that actually matters here.
