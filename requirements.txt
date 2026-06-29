@@ -17,3 +17,4 @@ youtube-transcript-api>=1.0
 ebooklib>=0.18
 beautifulsoup4>=4.12
 lxml>=5.0
+psutil

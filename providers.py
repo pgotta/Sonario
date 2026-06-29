@@ -1,13 +1,12 @@
 """
 providers.py — one OpenAI-compatible interface for every LLM backend.
 
-Because Windows-Copilot-API, Ollama, OpenAI and Gemini (compat endpoint)
-all speak the OpenAI /v1/chat/completions shape, a single client works for all.
-Switching provider = swapping base_url + model + key. No forked code.
+Because Ollama, OpenAI and Gemini (compat endpoint) all speak the OpenAI
+/v1/chat/completions shape, a single client works for all. Switching provider =
+swapping base_url + model + key. No forked code.
 
-Copilot is the zero-config default. It serializes upstream and tops out at ~1-4
-concurrent calls, and the maintainer explicitly asks not to hammer it, so the
-map phase calls run STRICTLY SEQUENTIAL and PACED via the throttle here.
+The default is a local Ollama model (Qwen3 8B). For cloud providers with rate
+limits, calls are paced via the throttle here.
 """
 
 import time
@@ -19,37 +18,43 @@ import requests
 
 # Built-in provider presets. base_url points at an OpenAI-compatible endpoint.
 PROVIDERS = {
-    "deepseek": {
-        "label": "DeepSeek (free, no key)",
-        "base_url": "http://localhost:8001/v1",
-        "model": "deepseek-chat",
+    "local-qwen8b": {
+        "label": "Qwen3 8B (recommended)",
+        "base_url": "http://localhost:11434/v1",
+        "model": "qwen3:8b",
         "needs_key": False,
-        "min_interval": 3.0,   # bridge serializes calls and self-limits ~30/min
-        "note": "Free & fast. Requires the DeepSeek-API bridge running locally (run deepseek_setup.bat). Sign in once.",
+        "min_interval": 0.0,
+        "tip": "Best all-round choice for a typical gaming laptop (8GB GPU). One strong local model does every step at full quality. ~5GB.",
+        "note": "Recommended. One local model for everything via Ollama (~5GB), full quality on every step. Good on an 8GB GPU. Run ollama_setup.bat (or  ollama pull qwen3:8b  ) first.",
     },
-    "deepseek-expert": {
-        "label": "DeepSeek Expert (free, slower, stronger)",
-        "base_url": "http://localhost:8001/v1",
-        "model": "deepseek-expert",
+    "local-smart": {
+        "label": "Smart routing (fast + quality models)",
+        "base_url": "http://localhost:11434/v1",
+        "model": "qwen3:8b",            # synthesis model (final reports/summaries)
+        "fast_model": "phi4-mini",      # helper model (chunks, classify, JSON)
         "needs_key": False,
-        "min_interval": 3.0,   # bridge serializes calls and self-limits ~30/min
-        "note": "Free. Same DeepSeek bridge, but uses the stronger Expert model (slower). Sign in once.",
+        "min_interval": 0.0,
+        "routed": True,                 # signals app.py to build a RoutingProvider
+        "tip": "Uses the lightweight model for bulk work and Qwen3 8B for the final write-up. Lighter on long jobs, but the chunk work is lower quality and it swaps models on an 8GB GPU.",
+        "note": "Uses two models on your GPU via Ollama: a fast model (phi4-mini) for the heavy repetitive work and a stronger model (qwen3:8b) for the final write-up. Lighter on very long jobs, but chunk-level quality is lower than running Qwen3 8B for everything. Run ollama_setup.bat first (installs both, ~8GB total).",
     },
-    "copilot": {
-        "label": "Windows Copilot (free, no key)",
-        "base_url": "http://localhost:8000/v1",
-        "model": "copilot",
+    "local-phi4mini": {
+        "label": "Phi-4-mini (lightweight)",
+        "base_url": "http://localhost:11434/v1",
+        "model": "phi4-mini",
         "needs_key": False,
-        "min_interval": 4.0,   # seconds between calls — respect Copilot's serial limit
-        "note": "Free. Requires the Windows-Copilot-API server running locally. Sign in once.",
+        "min_interval": 0.0,
+        "tip": "Smallest and fastest. Good for weaker or CPU-only machines, or when speed matters more than depth. Lower quality on long or complex sources. ~2.5GB.",
+        "note": "Smallest/fastest local option via Ollama (~2.5GB). Best for weaker or CPU-only machines, or when speed matters more than depth. Run  ollama pull phi4-mini  first.",
     },
     "ollama": {
-        "label": "Ollama (free, local, private)",
+        "label": "Ollama (any local model)",
         "base_url": "http://localhost:11434/v1",
         "model": "llama3.1",
         "needs_key": False,
         "min_interval": 0.0,   # local, parallel-safe, no pacing needed
-        "note": "Free & fully private. Requires Ollama installed and a pulled model.",
+        "tip": "Advanced: type the name of any model you've pulled with Ollama (e.g. qwen3:14b, llama3.1) in the Model box.",
+        "note": "Free & fully private. Requires Ollama installed and a pulled model. Type any pulled model name in the Model box.",
     },
     "openai": {
         "label": "OpenAI (API key)",
@@ -57,14 +62,16 @@ PROVIDERS = {
         "model": "gpt-4o-mini",
         "needs_key": True,
         "min_interval": 0.0,
+        "tip": "Cloud, paid. Fast and high quality, runs on OpenAI's servers (your text is sent to them). Needs an API key.",
         "note": "Paste an OpenAI API key. ~cents to a couple dollars for 200 docs.",
     },
     "gemini": {
-        "label": "Google Gemini (free tier or key)",
+        "label": "Google Gemini (API key)",
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
         "model": "gemini-2.0-flash",
         "needs_key": True,
         "min_interval": 1.0,
+        "tip": "Cloud. Has a free tier (rate-limited) plus paid. Runs on Google's servers (your text is sent to them). Needs an API key.",
         "note": "Free tier available (rate-limited). Uses Gemini's OpenAI-compatible endpoint.",
     },
 }
@@ -124,9 +131,9 @@ class Throttle:
 class LLMProvider:
     """A configured, OpenAI-compatible chat client."""
 
-    def __init__(self, provider_id="deepseek", base_url=None, model=None,
+    def __init__(self, provider_id="local-qwen8b", base_url=None, model=None,
                  api_key=None, min_interval=None):
-        preset = PROVIDERS.get(provider_id, PROVIDERS["deepseek"])
+        preset = PROVIDERS.get(provider_id, PROVIDERS["local-qwen8b"])
         self.provider_id = provider_id
         self.base_url = (base_url or preset["base_url"]).rstrip("/")
         self.model = model or preset["model"]
@@ -147,6 +154,14 @@ class LLMProvider:
         messages.append({"role": "user", "content": user})
         payload = {"model": self.model, "messages": messages, "stream": False}
 
+        # Local models (Ollama, port 11434) can be much slower than cloud, especially
+        # a 14B reasoning model spilling into system RAM on an 8GB GPU and emitting
+        # long <think> traces. Give them a generous ceiling so a slow-but-valid
+        # response isn't killed as a timeout. Only bump the default; respect an
+        # explicit shorter timeout (e.g. the quick connection test).
+        if timeout == 180 and ("11434" in self.base_url or "localhost:11434" in url):
+            timeout = 900
+
         last_err = None
         for attempt in range(max_retries):
             self.throttle.wait()
@@ -155,7 +170,7 @@ class LLMProvider:
                 if r.status_code == 200:
                     data = r.json()
                     content = data["choices"][0]["message"]["content"]
-                    return _strip_dashes(content)
+                    return _strip_dashes(_strip_think(content))
                 # 429/5xx are transient (esp. Copilot 502 under load) — back off
                 if r.status_code in (429, 500, 502, 503, 504):
                     last_err = f"HTTP {r.status_code}: {r.text[:200]}"
@@ -179,6 +194,95 @@ class LLMProvider:
         """Chat that expects a JSON object back. Strips fences, parses safely."""
         raw = self.chat(system, user, **kw)
         return _parse_json(raw)
+
+
+class RoutingProvider:
+    """Routes pipeline calls to one of two underlying providers by role.
+
+    Phase 1 of Sonario's multi-model design. Long jobs do two very different
+    kinds of LLM work:
+
+      - FAST role: cheap, repetitive, high-volume calls - per-document analyze
+        notes, per-chunk summaries, JSON classify/prompt steps. These run dozens
+        to hundreds of times per job, so a small fast model is ideal.
+      - SYNTH role: the final, quality-sensitive calls that run once - the report
+        synthesis, the final summary combine, and user-facing Q&A answers.
+
+    The pipeline calls `provider.fast.chat(...)` or `provider.synth.chat(...)`.
+    For backward compatibility this object also behaves like a single provider:
+    `.chat`, `.chat_json`, `.provider_id`, `.base_url`, `.model` all forward to
+    the SYNTH provider, so any code (or fallback cloud provider) that doesn't
+    care about roles keeps working unchanged.
+
+    When only one provider is configured (e.g. a cloud fallback), `fast` and
+    `synth` are the SAME object, so routing is a no-op and behaviour is identical
+    to before this change.
+    """
+
+    def __init__(self, synth, fast=None):
+        self.synth = synth
+        self.fast = fast if fast is not None else synth
+
+    # --- backward-compatible single-provider surface (forwards to synth) ---
+    def chat(self, system, user, **kw):
+        return self.synth.chat(system, user, **kw)
+
+    def chat_json(self, system, user, **kw):
+        return self.synth.chat_json(system, user, **kw)
+
+    @property
+    def provider_id(self):
+        return getattr(self.synth, "provider_id", "")
+
+    @property
+    def base_url(self):
+        return getattr(self.synth, "base_url", "")
+
+    @property
+    def model(self):
+        return getattr(self.synth, "model", "")
+
+
+def as_router(provider):
+    """Return a RoutingProvider regardless of input.
+
+    Accepts either a plain LLMProvider (wraps it so fast==synth) or an existing
+    RoutingProvider (returns it as-is). Lets pipeline code freely use `.fast` /
+    `.synth` without caring how the provider was built.
+    """
+    if isinstance(provider, RoutingProvider):
+        return provider
+    return RoutingProvider(synth=provider)
+
+
+def _strip_think(text):
+    """Remove reasoning-model 'thinking' blocks from output.
+
+    Reasoning/distill models (e.g. DeepSeek-R1 distills, Qwen3 in thinking mode)
+    emit their chain-of-thought wrapped in <think>...</think> before the real
+    answer. That scratch reasoning must not leak into reports, summaries, or the
+    JSON the classify/prompts steps parse. This runs at the single point all model
+    output passes through, so every provider benefits and the JSON paths stay clean.
+
+    Handles the normal closed-tag case, and the degenerate case where the model
+    was cut off mid-thought (an open <think> with no close) by dropping everything
+    up to the last </think>, or the whole thing if it never closed.
+    """
+    if not text or not isinstance(text, str):
+        return text
+    import re as _r
+    # Remove all well-formed <think>...</think> blocks (case-insensitive, multiline).
+    text = _r.sub(r"(?is)<think>.*?</think>", "", text)
+    # If an unmatched </think> remains (open tag stripped/absent), keep only what
+    # follows the final close tag — that's the actual answer.
+    if "</think>" in text.lower():
+        idx = text.lower().rfind("</think>")
+        text = text[idx + len("</think>"):]
+    # If an unclosed <think> remains (truncated mid-reasoning), drop from it on.
+    low = text.lower()
+    if "<think>" in low:
+        text = text[:low.find("<think>")]
+    return text.strip()
 
 
 def _strip_dashes(text):
@@ -232,24 +336,18 @@ def check_provider(provider):
         msg = str(e)
         low = msg.lower()
         base = getattr(provider, "base_url", "") or ""
-        # Friendlier, actionable guidance for the Windows Copilot bridge.
-        if "8000" in base or "localhost:8000" in low or "127.0.0.1:8000" in low:
+        # Local models via Ollama (port 11434). This is the default provider, so
+        # make the common first-run failures readable instead of a raw stack trace.
+        if "11434" in base or "localhost:11434" in low or "127.0.0.1:11434" in low:
             if ("refused" in low or "10061" in low or "max retries" in low
-                    or "failed to establish" in low or "connection" in low):
-                return False, ("Copilot server isn't running. Run copilot_setup.bat "
-                               "(it starts the server in the background).")
-            if ("401" in low or "403" in low or "auth" in low or "sign" in low
-                    or "login" in low or "unauthorized" in low):
-                return False, ("Copilot is running but not signed in. Run "
-                               "login_copilot.bat to sign in again.")
-        # Same idea for the DeepSeek bridge (runs on 8001 to avoid Copilot's 8000).
-        if "8001" in base or "localhost:8001" in low or "127.0.0.1:8001" in low:
-            if ("refused" in low or "10061" in low or "max retries" in low
-                    or "failed to establish" in low or "connection" in low):
-                return False, ("DeepSeek server isn't running. Run deepseek_setup.bat "
-                               "(it starts the server in the background).")
-            if ("401" in low or "403" in low or "auth" in low or "sign" in low
-                    or "login" in low or "unauthorized" in low):
-                return False, ("DeepSeek is running but not signed in. Run "
-                               "login_deepseek.bat to sign in again.")
+                    or "failed to establish" in low or "newconnectionerror" in low
+                    or "connection" in low):
+                return False, ("Ollama isn't running. Install it from ollama.com, "
+                               "then run ollama_setup.bat (or  ollama pull qwen3:8b  ). "
+                               "Ollama starts on its own after install (see BUILD.md).")
+            if ("404" in low or "not found" in low or "no such model" in low
+                    or "try pulling" in low):
+                mdl = getattr(provider, "model", "") or "the model"
+                return False, (f"Ollama is running but the model isn't downloaded yet. "
+                               f"Run  ollama pull {mdl}  and try again.")
         return False, msg[:200]

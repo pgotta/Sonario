@@ -146,9 +146,11 @@ def classify_mode(provider, sample_texts):
     if not sample_texts:
         return "general"
     joined = "\n\n---\n\n".join(t[:1200] for t in sample_texts[:6])
+    # Cheap classification step -> FAST helper model when routing is active.
+    fast = getattr(provider, "fast", provider)
     try:
-        reply = provider.chat(CLASSIFY_SYSTEM, f"Samples:\n\n{joined}",
-                              max_retries=2, timeout=60)
+        reply = fast.chat(CLASSIFY_SYSTEM, f"Samples:\n\n{joined}",
+                          max_retries=2, timeout=60)
     except Exception:
         return "general"
     word = (reply or "").strip().lower()

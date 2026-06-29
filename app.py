@@ -3,7 +3,7 @@ app.py — Anchors Aweigh server.
 
 Single-user local Flask server + single-file SPA. Runs one analysis job at a
 time in a background thread; the UI polls /status for live progress. Provider
-defaults to Windows Copilot (free, no key). Source is a Windows folder path or
+defaults to a local Ollama model (Qwen3 8B). Source is a Windows folder path or
 a Google Drive folder link.
 
 Behavioral rules:
@@ -45,6 +45,7 @@ import pipeline
 import extract
 import export
 import sources
+import sysmon
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, static_folder=os.path.join(APP_DIR, "static"))
@@ -152,13 +153,38 @@ def log(msg):
 
 
 def _build_provider(cfg):
-    pid = cfg.get("provider", "deepseek")
-    return providers.LLMProvider(
+    """Build the provider the pipeline will use.
+
+    Returns a RoutingProvider in all cases (via providers.as_router), so the
+    pipeline can always use `.fast` / `.synth`. When the chosen preset is a
+    routed local setup (or the UI supplies a separate fast model), the two roles
+    use different models; otherwise both roles point at the same single provider
+    and routing is a transparent no-op (cloud providers behave exactly as before).
+    """
+    pid = cfg.get("provider", "local-qwen8b")
+    preset = providers.PROVIDERS.get(pid, {})
+
+    # The synthesis (main) provider - the user-facing model.
+    synth = providers.LLMProvider(
         provider_id=pid,
         base_url=cfg.get("base_url") or None,
         model=cfg.get("model") or None,
         api_key=cfg.get("api_key") or None,
     )
+
+    # Decide the fast/helper model. Priority: explicit UI value, then the preset's
+    # fast_model (for routed presets like local-smart). If neither, fast == synth.
+    fast_model = (cfg.get("fast_model") or "").strip() or preset.get("fast_model")
+    if fast_model and fast_model != synth.model:
+        fast = providers.LLMProvider(
+            provider_id=pid,
+            base_url=cfg.get("base_url") or None,
+            model=fast_model,
+            api_key=cfg.get("api_key") or None,
+        )
+        return providers.RoutingProvider(synth=synth, fast=fast)
+
+    return providers.as_router(synth)
 
 
 def run_job(cfg):
@@ -331,6 +357,16 @@ def api_providers():
                     for k, v in providers.PROVIDERS.items()})
 
 
+@app.route("/api/sysload")
+def api_sysload():
+    """Live CPU / GPU / RAM load for the on-screen meter. Always 200, never raises."""
+    try:
+        return jsonify(sysmon.read())
+    except Exception:
+        return jsonify({"cpu_percent": None, "ram_percent": None,
+                        "gpu_available": False})
+
+
 @app.route("/api/modes")
 def api_modes():
     import modes as modes_mod
@@ -422,6 +458,7 @@ def history_get(kind, sid):
         if kind == "summary" and not SUM.get("running"):
             SUM["summary_md"] = payload.get("summary_md")
             SUM["bullets_md"] = payload.get("bullets_md")
+            SUM["detailed_md"] = payload.get("detailed_md")
             SUM["source_text"] = payload.get("source_text")
             SUM["source_label"] = payload.get("source_label", "")
             SUM["title"] = payload.get("title", "")
@@ -493,7 +530,7 @@ def download(kind):
 SUM = {
     "running": False, "stage": "idle", "detail": "",
     "summary_md": None, "md_path": None, "pdf_path": None,
-    "bullets_md": None,
+    "bullets_md": None, "detailed_md": None,
     "source_label": "", "title": "", "error": None,
     "is_youtube": False, "video_id": None, "segments": None,
     "source_text": None,
@@ -554,6 +591,11 @@ def _sum_progress(d):
         SUM["phase"] = "finalizing"
         SUM["detail"] = "Finishing up, preparing the bulleted view…"
         SUM["eta_sec"] = None
+    elif ph == "detailing":
+        SUM["stage"] = "synthesizing"
+        SUM["phase"] = "finalizing"
+        SUM["detail"] = "Writing the long Detailed version…"
+        SUM["eta_sec"] = None
     elif ph == "summarizing":
         SUM["stage"] = "summarizing"
         SUM["phase"] = "summarizing"
@@ -605,11 +647,13 @@ def run_summary(cfg):
         SUM["started"] = time.time()
         result = pipeline.summarize_text(provider, text, meta=meta,
                                          progress=_sum_progress)
-        # result is {"full":..., "bullets":...}
+        # result is {"full":..., "bullets":..., "detailed":...}
         summary = result.get("full", "") if isinstance(result, dict) else result
         bullets = result.get("bullets", "") if isinstance(result, dict) else ""
+        detailed = result.get("detailed", "") if isinstance(result, dict) else ""
         SUM["summary_md"] = summary
         SUM["bullets_md"] = bullets
+        SUM["detailed_md"] = detailed
         SUM["source_text"] = text  # kept for the follow-up Q&A box
 
         head = pipeline.summary_header(meta)
@@ -626,6 +670,7 @@ def run_summary(cfg):
             "title": SUM.get("title") or SUM.get("source_label") or "Summary",
             "summary_md": SUM.get("summary_md"),
             "bullets_md": SUM.get("bullets_md"),
+            "detailed_md": SUM.get("detailed_md"),
             "source_text": SUM.get("source_text"),
             "is_youtube": SUM.get("is_youtube", False),
             "video_id": SUM.get("video_id"),
@@ -658,8 +703,9 @@ def summarize():
 
     intype = request.form.get("input_type", "link")
     cfg = {
-        "provider": request.form.get("provider", "deepseek"),
+        "provider": request.form.get("provider", "local-qwen8b"),
         "model": request.form.get("model", ""),
+        "fast_model": request.form.get("fast_model", ""),
         "base_url": request.form.get("base_url", ""),
         "api_key": request.form.get("api_key", ""),
         "input_type": intype,
@@ -708,6 +754,7 @@ def summary_status():
         "title": SUM["title"],
         "summary_md": SUM["summary_md"] if done else None,
         "bullets_md": SUM["bullets_md"] if done else None,
+        "detailed_md": SUM["detailed_md"] if done else None,
         "has_pdf": bool(SUM["pdf_path"]),
         "is_youtube": SUM["is_youtube"] if done else False,
         "video_id": SUM["video_id"] if done else None,

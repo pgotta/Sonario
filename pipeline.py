@@ -50,15 +50,20 @@ MAP_SYSTEM = _map_system(modes_mod.MODES["journal"])
 
 
 def map_document(provider, text, map_system=None):
-    """One LLM call -> structured note dict. Raises on hard failure."""
+    """One LLM call -> structured note dict. Raises on hard failure.
+
+    Per-document work runs once per file (dozens to hundreds of times per job),
+    so it routes to the FAST helper model when one is configured.
+    """
+    fast = getattr(provider, "fast", provider)
     sys_prompt = map_system or MAP_SYSTEM
-    cap = 6000 if (getattr(provider, "provider_id", "") == "copilot") else MAX_CHARS_PER_DOC
+    cap = MAX_CHARS_PER_DOC
     snippet = text[:cap]
     user = f"Document:\n\"\"\"\n{snippet}\n\"\"\""
-    note = provider.chat_json(sys_prompt, user)
+    note = fast.chat_json(sys_prompt, user)
     if not isinstance(note, dict):
         # one corrective retry with a blunt instruction
-        note = provider.chat_json(
+        note = fast.chat_json(
             sys_prompt,
             user + "\n\nReturn ONLY the JSON object. No other text.",
         )
@@ -222,7 +227,9 @@ def synthesize(provider, reduced, sample_gists=None, mode_cfg=None):
         "Here is the aggregated analysis across all documents (JSON). Write the "
         "report from it.\n\n" + json.dumps(payload, ensure_ascii=False, indent=2)
     )
-    return _clean_summary(provider.chat(system, user))
+    # Final report: quality-sensitive, runs once -> SYNTH model.
+    synth = getattr(provider, "synth", provider)
+    return _clean_summary(synth.chat(system, user))
 
 
 PROMPTS_SYSTEM = (
@@ -336,7 +343,9 @@ def generate_prompts(provider, reduced, mode=None):
         "Aggregated analysis (JSON). Write follow-ups weighted toward what "
         "recurs.\n\n" + json.dumps(focus, ensure_ascii=False, indent=2)
     )
-    data = provider.chat_json(system, user)
+    # User-facing follow-ups, runs once -> SYNTH model for quality.
+    synth = getattr(provider, "synth", provider)
+    data = synth.chat_json(system, user)
     if not isinstance(data, dict):
         return None
     return _normalize_prompts(data)
@@ -439,17 +448,8 @@ def prompts_to_markdown(prompts, mode="journal"):
 # Roughly chars that fit comfortably in one pass for an 8B-class local model.
 SUMMARY_SINGLE_LIMIT = 14000
 CHUNK_SIZE = 12000
-# Copilot has a much smaller effective input limit than the API models and
-# returns {"message":"text-too-long"} above it, so use conservative sizes.
-COPILOT_SINGLE_LIMIT = 6000
-COPILOT_CHUNK_SIZE = 5000
-
-
 def _limits_for(provider):
     """Return (single_limit, chunk_size) tuned to the provider."""
-    pid = getattr(provider, "provider_id", "") or ""
-    if pid == "copilot":
-        return COPILOT_SINGLE_LIMIT, COPILOT_CHUNK_SIZE
     return SUMMARY_SINGLE_LIMIT, CHUNK_SIZE
 
 _NO_STYLE = (
@@ -513,6 +513,27 @@ REDUCE_SUMMARY_SYSTEM = (
     "## Takeaway\nOne or two sentences on the core message.\n\n"
     "Synthesize across ALL sections, not just the first. Be faithful; never invent. "
     "Keep it tight and scannable." + _NO_STYLE
+)
+
+DETAILED_SUMMARY_SYSTEM = (
+    "You write a THOROUGH, in-depth prose summary of a document, long article, or "
+    "long video transcript. This is the 'Detailed' view: the reader wants real "
+    "depth and nuance, not a quick skim. Aim for roughly TWO FULL PAGES or more "
+    "for substantial sources - do not compress aggressively, and do not omit "
+    "important supporting detail, examples, names, numbers, or step-by-step "
+    "reasoning that appears in the source.\n\n"
+    "Write in clear, well-organized PROSE (flowing paragraphs), not bullet lists. "
+    "Use '## ' sub-headlines named for the actual topics to organize the piece, "
+    "with several paragraphs of genuine explanation under each. Walk through the "
+    "material in a logical order, preserving the source's specifics: concrete "
+    "examples, case studies, anecdotes, figures, and the connective 'why' between "
+    "ideas. Where the source gives a sequence or process, explain it fully rather "
+    "than just naming it.\n\n"
+    "Start with one bold sentence giving the overall thesis, then an '## Overview' "
+    "of a short paragraph, then the detailed sections, and end with a '## Bottom "
+    "line' paragraph. Be faithful to the source; never invent facts or add outside "
+    "information. If it is a transcript, summarize what is said, not the act of "
+    "speaking. Favor completeness and clarity over brevity." + _NO_STYLE
 )
 
 BULLETS_SYSTEM = (
@@ -606,15 +627,17 @@ def _final_combine(provider, joined, single_limit, chunk_size, progress=None):
          LLM call at all, so a finished run is never thrown away.
     The worst case is a slightly less polished summary, not a crash.
     """
-    # 1) normal one-shot combine
+    synth = getattr(provider, "synth", provider)
+    fast = getattr(provider, "fast", provider)
+    # 1) normal one-shot combine (final output -> SYNTH model)
     try:
-        return provider.chat(REDUCE_SUMMARY_SYSTEM,
-                             f"Section notes, in order:\n\n{joined}")
+        return synth.chat(REDUCE_SUMMARY_SYSTEM,
+                          f"Section notes, in order:\n\n{joined}")
     except Exception:
         pass
 
-    # 2) hierarchical combine: break notes into small batches, summarize each,
-    #    then do one final pass over the (now much smaller) batch summaries.
+    # 2) hierarchical combine: break notes into small batches, summarize each
+    #    (cheap repetitive work -> FAST model), then one final pass (SYNTH).
     if progress:
         progress({"phase": "synthesizing", "final": True, "recovering": True})
     blocks = [b for b in joined.split("\n\n") if b.strip()]
@@ -624,7 +647,7 @@ def _final_combine(provider, joined, single_limit, chunk_size, progress=None):
     for i in range(0, len(blocks), batch_size):
         batch = "\n\n".join(blocks[i:i + batch_size])
         try:
-            partials.append(provider.chat(CHUNK_SYSTEM, batch))
+            partials.append(fast.chat(CHUNK_SYSTEM, batch))
         except Exception:
             # keep the raw notes for this batch rather than dropping them
             partials.append(batch[:1500])
@@ -632,8 +655,8 @@ def _final_combine(provider, joined, single_limit, chunk_size, progress=None):
     if len(small) > single_limit:
         small = small[:single_limit]
     try:
-        return provider.chat(REDUCE_SUMMARY_SYSTEM,
-                             f"Section notes, in order:\n\n{small}")
+        return synth.chat(REDUCE_SUMMARY_SYSTEM,
+                          f"Section notes, in order:\n\n{small}")
     except Exception:
         pass
 
@@ -662,11 +685,15 @@ def summarize_text(provider, text, meta=None, progress=None):
 
     single_limit, chunk_size = _limits_for(provider)
     note_suffix = ""
+    synth = getattr(provider, "synth", provider)
+    fast = getattr(provider, "fast", provider)
+    detail_source = None   # richest material for the long "Detailed" view
 
     if len(text) <= single_limit:
         if progress:
             progress({"phase": "summarizing", "chunk": 1, "chunks": 1})
-        full = provider.chat(SUMMARY_SYSTEM, f"Source:\n\"\"\"\n{text}\n\"\"\"")
+        full = synth.chat(SUMMARY_SYSTEM, f"Source:\n\"\"\"\n{text}\n\"\"\"")
+        detail_source = text   # short doc: detailed can read the whole thing
     else:
         # Long source: map-reduce. Resilient to occasional provider failures.
         # a failed chunk is skipped (with a marker) rather than aborting the whole
@@ -678,20 +705,24 @@ def summarize_text(provider, text, meta=None, progress=None):
             if progress:
                 progress({"phase": "condensing", "chunk": i + 1, "chunks": len(chunks)})
             try:
-                note = provider.chat(CHUNK_SYSTEM, f"Section {i+1} of {len(chunks)}:\n"
-                                                   f"\"\"\"\n{ch}\n\"\"\"")
+                note = fast.chat(CHUNK_SYSTEM, f"Section {i+1} of {len(chunks)}:\n"
+                                               f"\"\"\"\n{ch}\n\"\"\"")
                 notes.append(f"[Section {i+1}]\n{note}")
             except Exception:
                 failed += 1
                 notes.append(f"[Section {i+1}]\n(this section could not be processed)")
         if failed and failed >= len(chunks):
-            raise RuntimeError("The summary failed. The AI provider rejected every "
-                               "section. If using Windows Copilot, check it's running "
-                               "and signed in, then try again.")
+            raise RuntimeError("The summary failed. The AI model rejected every "
+                               "section. Check that Ollama is running and the model "
+                               "is pulled (Test connection), then try again.")
 
         if progress:
             progress({"phase": "synthesizing", "chunk": len(chunks), "chunks": len(chunks)})
         joined = "\n\n".join(notes)
+        # Keep the FULL, un-condensed section notes as the source for the detailed
+        # view. The while-loop below compresses `joined` down toward one page for
+        # the normal summary; the detailed view wants this richer material instead.
+        detail_source = joined
         # The reduce phase may take several rounds of condensing for very long
         # books. Report a CUMULATIVE, monotonic step count so the UI never appears
         # to go backwards (e.g. "pass 1 of 2" then back to "pass 1 of 2"), which
@@ -709,7 +740,7 @@ def summarize_text(provider, text, meta=None, progress=None):
                     progress({"phase": "synthesizing", "reduce_step": condense_step,
                               "reduce_round": round_no})
                 try:
-                    batch_notes.append(provider.chat(CHUNK_SYSTEM, b))
+                    batch_notes.append(fast.chat(CHUNK_SYSTEM, b))
                 except Exception:
                     batch_notes.append(b[:1500])
             new_joined = "\n\n".join(batch_notes)
@@ -735,14 +766,66 @@ def summarize_text(provider, text, meta=None, progress=None):
     full = _clean_summary(full) + note_suffix
 
     # One extra pass to produce the simplified bulleted version for the toggle.
+    # This just reformats the already-written summary, so it routes to FAST.
     if progress:
         progress({"phase": "finalizing"})
     try:
-        bullets = _clean_summary(provider.chat(BULLETS_SYSTEM, full))
+        bullets = _clean_summary(fast.chat(BULLETS_SYSTEM, full))
     except Exception:
         bullets = ""  # toggle just won't have a simplified view if this fails
 
-    return {"full": full, "bullets": bullets}
+    # The long, thorough "Detailed" view - generated from the richest material we
+    # have (section notes for long sources, full text for short ones) so it can be
+    # genuinely in-depth rather than a re-expansion of the one-page summary.
+    if progress:
+        progress({"phase": "detailing"})
+    try:
+        detailed = _build_detailed(synth, detail_source or full, single_limit) + note_suffix
+    except Exception:
+        detailed = ""  # toggle just won't have a detailed view if this fails
+
+    return {"full": full, "bullets": bullets, "detailed": detailed}
+
+
+def _build_detailed(synth, source, single_limit):
+    """Write a long, thorough prose summary from the richest source material.
+
+    For sources that fit, one pass. For very long ones, split the section notes
+    into large batches, write a detailed pass per batch, and join them - this
+    keeps depth (no aggressive compression) while staying within model limits.
+    """
+    source = (source or "").strip()
+    if not source:
+        return ""
+    # Detailed prose can be long, so allow a larger input window than the normal
+    # one-page limit before we have to batch.
+    cap = max(single_limit, 16000)
+    if len(source) <= cap:
+        return _clean_summary(synth.chat(DETAILED_SUMMARY_SYSTEM,
+                                         f"Source material:\n\"\"\"\n{source}\n\"\"\""))
+    # Too big for one pass: batch the section notes and write detailed prose for
+    # each batch, then concatenate (sections are already in order).
+    blocks = [b for b in source.split("\n\n") if b.strip()]
+    batches, cur, cur_len = [], [], 0
+    for b in blocks:
+        if cur_len + len(b) > cap and cur:
+            batches.append("\n\n".join(cur)); cur, cur_len = [], 0
+        cur.append(b); cur_len += len(b) + 2
+    if cur:
+        batches.append("\n\n".join(cur))
+    parts = []
+    for i, batch in enumerate(batches):
+        try:
+            piece = synth.chat(
+                DETAILED_SUMMARY_SYSTEM,
+                f"This is part {i+1} of {len(batches)} of the source material, in "
+                f"order. Write the detailed summary for THIS part; it will be joined "
+                f"with the others. Do not repeat an overall intro each time.\n\n"
+                f"\"\"\"\n{batch}\n\"\"\"")
+            parts.append(_clean_summary(piece))
+        except Exception:
+            continue
+    return "\n\n".join(p for p in parts if p)
 
 
 ASK_SYSTEM = (
@@ -857,7 +940,9 @@ def answer_question(provider, question, context, extra=None):
         parts.append("Summary (for orientation):\n" + extra[:1500])
     parts.append("Relevant excerpts from the FULL source:\n\"\"\"\n" + excerpts + "\n\"\"\"")
     parts.append("Question: " + question)
-    return _clean_summary(provider.chat(ASK_SYSTEM, "\n\n".join(parts)))
+    # User-facing answer, runs once per question -> SYNTH model for quality.
+    synth = getattr(provider, "synth", provider)
+    return _clean_summary(synth.chat(ASK_SYSTEM, "\n\n".join(parts)))
 
 
 def summary_header(meta):

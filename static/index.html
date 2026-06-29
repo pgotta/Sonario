@@ -194,7 +194,7 @@
   .askrow textarea::-webkit-scrollbar-button:vertical:increment,
   .askrow textarea::-webkit-scrollbar-button:vertical:decrement{display:none;height:0;width:0}
   /* ask box pinned at the bottom of the right summary pane, resizable */
-  .reader-ask{flex-shrink:0;height:230px;border-top:1px solid var(--rule);background:var(--abyss);padding:13px 22px 16px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--panel-3) transparent}
+  .reader-ask{flex-shrink:0;height:118px;border-top:1px solid var(--rule);background:var(--abyss);padding:13px 22px 16px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--panel-3) transparent}
   .reader-ask::-webkit-scrollbar{width:10px}
   .reader-ask::-webkit-scrollbar-track{background:transparent}
   .reader-ask::-webkit-scrollbar-thumb{background:var(--panel-3);border-radius:5px;border:2px solid var(--abyss)}
@@ -364,9 +364,38 @@
   .srccheck input{width:18px;height:18px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
   .srcbody{margin:13px 0 0}
   .srcbody input[type=text]{margin-bottom:0}
+  /* ---- Live resource meter (fixed bottom-left, like Stemmy) ---- */
+  #sysmon{position:fixed;left:14px;bottom:14px;z-index:9999;
+    background:rgba(20,32,46,.92);border:1px solid var(--line,#33506f);
+    border-radius:10px;padding:8px 10px;backdrop-filter:blur(6px);
+    box-shadow:0 4px 18px rgba(0,0,0,.35);font-size:11px;color:var(--ink-soft);
+    width:158px;user-select:none;transition:opacity .2s}
+  #sysmon.hidden{display:none}
+  #sysmon .smRow{display:flex;align-items:center;gap:7px;margin:3px 0}
+  #sysmon .smLbl{width:30px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+  #sysmon .smBarWrap{flex:1;height:9px;border-radius:5px;background:rgba(255,255,255,.10);overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+  #sysmon .smBar{display:block;height:100%;width:0%;border-radius:5px;transition:width .35s ease,background-color .35s ease}
+  #sysmon .smVal{width:30px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-soft)}
+  #sysmon .smHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+  #sysmon .smTitle{font-weight:700;color:var(--ink-soft);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+  #sysmon .smX{cursor:pointer;color:var(--muted);font-size:13px;line-height:1;padding:0 2px}
+  #sysmon .smX:hover{color:var(--ink)}
+  #sysmonShow{position:fixed;left:14px;bottom:14px;z-index:9999;display:none;
+    cursor:pointer;background:rgba(20,32,46,.92);border:1px solid var(--line,#33506f);
+    border-radius:8px;padding:5px 9px;font-size:11px;color:var(--ink-soft);
+    box-shadow:0 4px 18px rgba(0,0,0,.35)}
+  #sysmonShow:hover{color:var(--ink)}
 </style>
 </head>
 <body>
+<div id="sysmon" class="hidden">
+  <div class="smHead"><span class="smTitle">System load</span><span class="smX" id="smClose" title="Hide">&times;</span></div>
+  <div class="smRow"><span class="smLbl">CPU</span><span class="smBarWrap"><span class="smBar" id="smCpuBar"></span></span><span class="smVal" id="smCpuVal">—</span></div>
+  <div class="smRow"><span class="smLbl">GPU</span><span class="smBarWrap"><span class="smBar" id="smGpuBar"></span></span><span class="smVal" id="smGpuVal">—</span></div>
+  <div class="smRow"><span class="smLbl">VRAM</span><span class="smBarWrap"><span class="smBar" id="smVramBar"></span></span><span class="smVal" id="smVramVal">—</span></div>
+  <div class="smRow"><span class="smLbl">RAM</span><span class="smBarWrap"><span class="smBar" id="smRamBar"></span></span><span class="smVal" id="smRamVal">—</span></div>
+</div>
+<div id="sysmonShow" title="Show system load">▣ load</div>
 <div class="shell">
   <!-- slim utility bar -->
   <div class="utilbar">
@@ -432,7 +461,7 @@
         </div>
         <div class="card">
           <h2>2 · Which AI reads them?</h2>
-          <p class="hint">Default is DeepSeek, free, no API key. Switch any time.</p>
+          <p class="hint">Runs locally and privately on your machine. The default, Qwen3 8B, is recommended for a typical 8GB gaming laptop. Needs Ollama (see BUILD.md). Hover a provider for details; switch any time.</p>
           <div class="two"><div class="row"><label class="fld">Provider</label><select id="provider"></select></div><div class="row"><label class="fld">Model</label><input type="text" id="model"></div></div>
           <div class="row" id="keyRow" style="display:none"><label class="fld">API key</label><input type="password" id="apiKey" placeholder="stored only in memory for this run"></div>
           <div class="row" id="baseRow" style="display:none"><label class="fld">Base URL (advanced)</label><input type="text" id="baseUrl"></div>
@@ -446,7 +475,7 @@
           <div class="note" id="modeBlurb"></div>
         </div>
         <div class="card">
-          <div class="warnbox" id="driveCopilotWarn"><strong>Heads up:</strong> you’re about to send <strong>Google Drive</strong> documents through the <strong>Windows Copilot</strong> bridge, an unofficial path, so your Drive files would leave your machine via Copilot. For cloud-hosted journals, consider <strong>Ollama</strong> (fully local) instead.</div>
+          <div class="warnbox" id="driveCloudWarn"><strong>Heads up:</strong> you’re about to send <strong>Google Drive</strong> documents to a <strong>cloud</strong> AI provider, so your Drive files would leave your machine. For private documents, use a <strong>local</strong> provider (Qwen3 8B or any Ollama model) instead.</div>
           <div class="actions"><button class="btn primary" id="startBtn">Analyze my documents</button><button class="btn ghost" id="stopBtn" style="display:none">Stop</button><span class="note" id="runHint" style="margin-top:0">A 200-doc run on a free provider can take 10-20 min. Re-runs are instant; analyzed files are cached.</span></div>
         </div>
         <div class="card" id="progressCard" style="display:none">
@@ -513,7 +542,7 @@
       </div>
       <div class="card">
         <h2>What should I summarize?</h2>
-        <p class="hint">A file (Word, PDF, EPUB, text), a YouTube video (uses captions, works for long videos), or a web page.</p>
+        <p class="hint">A file (Word, PDF, EPUB, text), a YouTube video, or a web page. <strong>YouTube videos need captions to transcribe</strong> (most do) — videos with captions disabled can't be summarized.</p>
         <div class="row"><div class="seg" id="sumseg"><button class="on" data-in="file">Upload a file</button><button data-in="link">Paste a link</button></div></div>
         <div class="row" id="sumFileRow">
           <div class="drop" id="drop"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 20h14"/></svg><div class="big">Drop a file here, or click to choose</div><div class="sm">.docx · .pdf · .epub · .txt · .md · .rtf · images (OCR)</div></div>
@@ -524,7 +553,7 @@
       </div>
       <div class="card">
         <h2>Which AI?</h2>
-        <p class="hint">Same providers as Analyze. Default is DeepSeek (free).</p>
+        <p class="hint">Same providers as Analyze. Default is Qwen3 8B (recommended, runs locally).</p>
         <div class="two"><div class="row"><label class="fld">Provider</label><select id="sumProvider"></select></div><div class="row"><label class="fld">Model</label><input type="text" id="sumModel"></div></div>
         <div class="row" id="sumKeyRow" style="display:none"><label class="fld">API key</label><input type="password" id="sumApiKey" placeholder="stored only in memory for this run"></div>
         <div class="row" id="sumBaseRow" style="display:none"><label class="fld">Base URL (advanced)</label><input type="text" id="sumBaseUrl"></div>
@@ -533,7 +562,7 @@
       <div class="card" id="sumProgress" style="display:none"><div class="sonarwrap"><div class="sonar" style="--sz:108px"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="cross h"></div><div class="cross v"></div><div class="sweep"></div><div class="line"></div><div class="blip"></div></div><div class="slabel" id="sumStageHead">Working…</div><div class="ssub" id="sumStageSub"></div></div><div class="pbar" style="margin-top:6px"><i id="sumPbar" style="width:35%"></i></div></div>
       <div id="sumEmpty" class="empty" style="display:none">No summary yet.</div>
       <div id="sumWrap" style="display:none">
-        <div class="dlbar"><span class="srclabel" id="sumSrcLabel"></span><span class="seg2" id="pageToggle" style="display:none;margin-right:auto"><button id="pgFull" class="on" onclick="renderPageSummary('full')">Full</button><button id="pgBul" onclick="renderPageSummary('bullets')">Bullets</button></span><button class="btn ghost small" id="sumDlMd">Download .md</button><button class="btn teal small" id="sumDlPdf">Download .pdf</button></div>
+        <div class="dlbar"><span class="srclabel" id="sumSrcLabel"></span><span class="seg2" id="pageToggle" style="display:none;margin-right:auto"><button id="pgDet" onclick="renderPageSummary('detailed')">Detailed</button><button id="pgFull" class="on" onclick="renderPageSummary('full')">Normal</button><button id="pgBul" onclick="renderPageSummary('bullets')">Bullets</button></span><button class="btn ghost small" id="sumDlMd">Download .md</button><button class="btn teal small" id="sumDlPdf">Download .pdf</button></div>
         <article class="report" id="sumBody"></article>
         <div id="pageAsk"></div>
       </div>
@@ -558,7 +587,8 @@
       <section class="reader-pane reader-right">
         <div class="reader-pane-head"><span class="dot-green"></span>Summary
           <span class="seg2" id="summaryToggle" style="margin-left:auto;display:none">
-            <button id="tgFull" class="on" onclick="renderSummaryPane('full')">Full</button>
+            <button id="tgDet" onclick="renderSummaryPane('detailed')">Detailed</button>
+            <button id="tgFull" class="on" onclick="renderSummaryPane('full')">Normal</button>
             <button id="tgBul" onclick="renderSummaryPane('bullets')">Bullets</button>
           </span>
         </div>
@@ -580,7 +610,7 @@ $('#goReportBtn').onclick=()=>{switchSub('report');window.scrollTo({top:0,behavi
 
 async function loadProviders(){
   PROVIDERS=await(await fetch('/api/providers')).json();
-  for(const sel of [$('#provider'),$('#sumProvider')]){sel.innerHTML='';for(const [id,p] of Object.entries(PROVIDERS)){const o=document.createElement('option');o.value=id;o.textContent=p.label;sel.appendChild(o);}sel.value='deepseek';}
+  for(const sel of [$('#provider'),$('#sumProvider')]){sel.innerHTML='';for(const [id,p] of Object.entries(PROVIDERS)){const o=document.createElement('option');o.value=id;o.textContent=p.label;if(p.tip)o.title=p.tip;sel.appendChild(o);}sel.value='local-qwen8b';}
   applyProvider();applySumProvider();$('#provider').onchange=applyProvider;$('#sumProvider').onchange=applySumProvider;
 }
 let MODES={};
@@ -591,11 +621,11 @@ async function loadModes(){
   sel.value='auto';applyMode();sel.onchange=applyMode;
 }
 function applyMode(){const m=MODES[$('#mode').value];$('#modeBlurb').textContent=m?m.blurb:'';}
-const ADV=['openai','gemini','ollama','lmstudio','openrouter'];
-function applyProvider(){const p=PROVIDERS[$('#provider').value];$('#model').value=p.model;$('#baseUrl').value=p.base_url;$('#keyRow').style.display=p.needs_key?'block':'none';$('#baseRow').style.display=ADV.includes($('#provider').value)?'block':'none';$('#provNote').textContent=p.note||'';updateWarn();}
+const ADV=['openai','gemini','ollama'];
+function applyProvider(){const p=PROVIDERS[$('#provider').value];$('#model').value=p.model;$('#baseUrl').value=p.base_url;$('#keyRow').style.display=p.needs_key?'block':'none';$('#baseRow').style.display=ADV.includes($('#provider').value)?'block':'none';$('#provider').title=p.tip||'';let note=p.note||'';if(p.fast_model){note='Synthesis model: '+p.model+'  |  Fast model: '+p.fast_model+'. '+note;}$('#provNote').textContent=note;updateWarn();}
 function applySumProvider(){const p=PROVIDERS[$('#sumProvider').value];$('#sumModel').value=p.model;$('#sumBaseUrl').value=p.base_url;$('#sumKeyRow').style.display=p.needs_key?'block':'none';$('#sumBaseRow').style.display=ADV.includes($('#sumProvider').value)?'block':'none';}
-function providerCfg(){return{provider:$('#provider').value,model:$('#model').value.trim(),base_url:$('#baseUrl').value.trim(),api_key:$('#apiKey').value.trim()};}
-function sumProviderCfg(){return{provider:$('#sumProvider').value,model:$('#sumModel').value.trim(),base_url:$('#sumBaseUrl').value.trim(),api_key:$('#sumApiKey').value.trim()};}
+function providerCfg(){const p=PROVIDERS[$('#provider').value]||{};return{provider:$('#provider').value,model:$('#model').value.trim(),fast_model:p.fast_model||'',base_url:$('#baseUrl').value.trim(),api_key:$('#apiKey').value.trim()};}
+function sumProviderCfg(){const p=PROVIDERS[$('#sumProvider').value]||{};return{provider:$('#sumProvider').value,model:$('#sumModel').value.trim(),fast_model:p.fast_model||'',base_url:$('#sumBaseUrl').value.trim(),api_key:$('#sumApiKey').value.trim()};}
 
 // dual source checkboxes — folder and/or drive
 function syncSrc(){
@@ -605,7 +635,7 @@ function syncSrc(){
 }
 $('#useFolder').onchange=syncSrc;
 $('#useGdrive').onchange=syncSrc;
-function updateWarn(){$('#driveCopilotWarn').style.display=($('#useGdrive').checked&&$('#provider').value==='copilot')?'block':'none';}
+function updateWarn(){const p=PROVIDERS[$('#provider').value]||{};$('#driveCloudWarn').style.display=($('#useGdrive').checked&&p.needs_key)?'block':'none';}
 $('#testBtn').onclick=async()=>{const out=$('#testOut');out.innerHTML='<span class="note">testing…</span>';try{const r=await(await fetch('/api/test_provider',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(providerCfg())})).json();out.innerHTML=r.ok?'<span class="pill ok">connected</span>':`<span class="pill bad">failed</span> <span class="note">${esc(r.message||'')}</span>`;}catch(e){out.innerHTML='<span class="pill bad">error</span>';}};
 async function gdriveStatus(){try{const r=await(await fetch('/api/gdrive_status')).json();$('#credPath').innerHTML=r.creds_dir?`<code class="k">${esc(r.creds_dir)}</code>`:'';const pill=$('#credPill'),note=$('#gdriveNote');if(r.credentials_present){pill.className='pill ok';pill.textContent='credentials.json found';note.innerHTML='<span class="pill ok">ready</span> Paste a folder link and analyze.';}else{pill.className='pill bad';pill.textContent='credentials.json missing';note.innerHTML='Not connected yet, see <strong>Google Drive setup</strong>.';}}catch(e){}}
 $('#recheck').onclick=gdriveStatus;
@@ -641,11 +671,11 @@ drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');if(e.dataTransf
 fileInput.onchange=()=>{if(fileInput.files[0])setFile(fileInput.files[0]);};
 function setFile(f){sumFile=f;$('#fileChipWrap').innerHTML=`<div class="filechip">📄 <b>${esc(f.name)}</b> <span class="fsz">· ${(f.size/1024).toFixed(0)} KB</span> <button class="filex" title="Remove" onclick="clearFile()">✕</button></div>`;}
 function clearFile(){sumFile=null;$('#fileChipWrap').innerHTML='';fileInput.value='';}
-function sumCfgForm(){const fd=new FormData();fd.append('provider',$('#sumProvider').value);fd.append('model',$('#sumModel').value.trim());fd.append('base_url',$('#sumBaseUrl').value.trim());fd.append('api_key',$('#sumApiKey').value.trim());fd.append('input_type',sumInput);if(sumInput==='file'){if(!sumFile){alert('Choose a file first.');return null;}fd.append('file',sumFile);}else{const link=$('#sumLink').value.trim();if(!link){alert('Paste a link first.');return null;}fd.append('link',link);}return fd;}
+function sumCfgForm(){const fd=new FormData();const p=PROVIDERS[$('#sumProvider').value]||{};fd.append('provider',$('#sumProvider').value);fd.append('model',$('#sumModel').value.trim());fd.append('fast_model',p.fast_model||'');fd.append('base_url',$('#sumBaseUrl').value.trim());fd.append('api_key',$('#sumApiKey').value.trim());fd.append('input_type',sumInput);if(sumInput==='file'){if(!sumFile){alert('Choose a file first.');return null;}fd.append('file',sumFile);}else{const link=$('#sumLink').value.trim();if(!link){alert('Paste a link first.');return null;}fd.append('link',link);}return fd;}
 $('#sumStart').onclick=async()=>{const fd=sumCfgForm();if(!fd)return;$('#sumStart').disabled=true;$('#sumProgress').style.display='block';$('#sumWrap').style.display='none';$('#sumEmpty').style.display='none';$('#sumStageHead').textContent='Working…';$('#sumStageSub').textContent='Fetching your source…';$('#sumPbar').style.width='20%';const r=await(await fetch('/api/summarize',{method:'POST',body:fd})).json();if(!r.ok){$('#sumStart').disabled=false;$('#sumProgress').style.display='none';alert(r.message||'Could not start.');return;}startSumPolling();};
 function startSumPolling(){if(sumPolling)clearInterval(sumPolling);sumPolling=setInterval(sumTick,1100);sumTick();}
-async function sumTick(){let s;try{s=await(await fetch('/api/summary_status')).json();}catch(e){return;}const L={fetching:'Fetching source',summarizing:'Summarizing',condensing:'Reading in sections',synthesizing:'Writing the summary',done:'Summary ready',error:'Something went wrong',idle:'Idle'};$('#sumStageHead').textContent=L[s.stage]||s.stage;$('#sumStageSub').textContent=s.error?s.error:(s.detail||'');$('#sumPbar').style.width=(s.pct!=null?s.pct:40)+'%';if(s.stage==='done'){clearInterval(sumPolling);sumPolling=null;$('#sumStart').disabled=false;$('#sumProgress').style.display='none';loadSessions();if(s.is_youtube&&s.segments&&s.segments.length){openReader(s);}else{$('#sumWrap').style.display='block';window.__pageFull=s.summary_md||'';window.__pageBullets=s.bullets_md||'';renderPageSummary('full');$('#sumSrcLabel').textContent=s.source_label||'';const pa=$('#pageAsk');pa.innerHTML=askBoxHTML('Have questions about this? Ask here:');wireAsk(pa.querySelector('.askbox'),'summary',sumProviderCfg);}}else if(s.stage==='error'||!s.running){clearInterval(sumPolling);sumPolling=null;$('#sumStart').disabled=false;if(s.stage==='error'){$('#sumProgress').style.display='block';}}}
-function renderPageSummary(mode){const has=!!window.__pageBullets;const md=(mode==='bullets'&&has)?window.__pageBullets:window.__pageFull;$('#sumBody').innerHTML=mdToHtml(md);$('#pgFull').classList.toggle('on',mode==='full');$('#pgBul').classList.toggle('on',mode==='bullets');$('#pageToggle').style.display=has?'inline-flex':'none';}
+async function sumTick(){let s;try{s=await(await fetch('/api/summary_status')).json();}catch(e){return;}const L={fetching:'Fetching source',summarizing:'Summarizing',condensing:'Reading in sections',synthesizing:'Writing the summary',done:'Summary ready',error:'Something went wrong',idle:'Idle'};$('#sumStageHead').textContent=L[s.stage]||s.stage;$('#sumStageSub').textContent=s.error?s.error:(s.detail||'');$('#sumPbar').style.width=(s.pct!=null?s.pct:40)+'%';if(s.stage==='done'){clearInterval(sumPolling);sumPolling=null;$('#sumStart').disabled=false;$('#sumProgress').style.display='none';loadSessions();if(s.is_youtube&&s.segments&&s.segments.length){openReader(s);}else{$('#sumWrap').style.display='block';window.__pageFull=s.summary_md||'';window.__pageBullets=s.bullets_md||'';window.__pageDetailed=s.detailed_md||'';renderPageSummary('full');$('#sumSrcLabel').textContent=s.source_label||'';const pa=$('#pageAsk');pa.innerHTML=askBoxHTML('Have questions about this? Ask here:');wireAsk(pa.querySelector('.askbox'),'summary',sumProviderCfg);}}else if(s.stage==='error'||!s.running){clearInterval(sumPolling);sumPolling=null;$('#sumStart').disabled=false;if(s.stage==='error'){$('#sumProgress').style.display='block';}}}
+function renderPageSummary(mode){const hasBul=!!window.__pageBullets;const hasDet=!!window.__pageDetailed;let md;if(mode==='bullets'&&hasBul)md=window.__pageBullets;else if(mode==='detailed'&&hasDet)md=window.__pageDetailed;else{mode='full';md=window.__pageFull;}$('#sumBody').innerHTML=mdToHtml(md);$('#pgFull').classList.toggle('on',mode==='full');$('#pgBul').classList.toggle('on',mode==='bullets');$('#pgDet').classList.toggle('on',mode==='detailed');$('#pgDet').style.display=hasDet?'inline-block':'none';$('#pgBul').style.display=hasBul?'inline-block':'none';$('#pageToggle').style.display=(hasBul||hasDet)?'inline-flex':'none';}
 function groupSegments(segs){
   // group consecutive caption lines into readable paragraphs (~280 chars or 5 lines)
   const groups=[];let cur=null;
@@ -665,8 +695,8 @@ function openReader(s){
   let thumb='';
   if(s.video_id){thumb=`<a class="vthumb" href="https://www.youtube.com/watch?v=${encodeURIComponent(s.video_id)}" target="_blank" rel="noopener"><img src="https://img.youtube.com/vi/${encodeURIComponent(s.video_id)}/mqdefault.jpg" alt="video thumbnail" loading="lazy"><span class="vplay">▶</span></a>`;}
   tl.innerHTML=thumb+groups.map(g=>`<div class="tline"><span class="tt">${esc(g.ts)}</span><span class="tx">${esc(g.text)}</span></div>`).join('');
-  // summary pane with Full/Bullets toggle
-  window.__sumFull=s.summary_md||'';window.__sumBullets=s.bullets_md||'';
+  // summary pane with Detailed/Normal/Bullets toggle
+  window.__sumFull=s.summary_md||'';window.__sumBullets=s.bullets_md||'';window.__sumDetailed=s.detailed_md||'';
   renderSummaryPane('full');
   // interactive Q&A box for the video
   const ra=$('#readerAsk');ra.innerHTML=askBoxHTML('Have questions about this video? Ask here:');
@@ -699,12 +729,18 @@ function wireAskResize(){
   handle.addEventListener('dblclick',()=>{pane.style.height=MIN+'px';});
 }
 function renderSummaryPane(mode){
-  const has=!!window.__sumBullets;
-  const md=(mode==='bullets'&&has)?window.__sumBullets:window.__sumFull;
+  const hasBul=!!window.__sumBullets;const hasDet=!!window.__sumDetailed;
+  let md;
+  if(mode==='bullets'&&hasBul)md=window.__sumBullets;
+  else if(mode==='detailed'&&hasDet)md=window.__sumDetailed;
+  else{mode='full';md=window.__sumFull;}
   $('#summaryScroll').innerHTML=mdToHtml(md);
   $('#tgFull').classList.toggle('on',mode==='full');
   $('#tgBul').classList.toggle('on',mode==='bullets');
-  $('#summaryToggle').style.display=has?'inline-flex':'none';
+  $('#tgDet').classList.toggle('on',mode==='detailed');
+  $('#tgDet').style.display=hasDet?'inline-block':'none';
+  $('#tgBul').style.display=hasBul?'inline-block':'none';
+  $('#summaryToggle').style.display=(hasBul||hasDet)?'inline-flex':'none';
 }
 function closeReader(){$('#sumReader').style.display='none';document.body.style.overflow='';}
 // ── Q&A box: builds an interactive ask box into a container ──
@@ -723,6 +759,16 @@ function wireAsk(container, scope, providerGetter){
       const r=await(await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)})).json();
       qa.querySelector('.aa').className='aa';
       qa.querySelector('.aa').innerHTML=r.ok?mdToHtml(r.answer||''):`<span style="color:var(--bad,#e88)">${esc(r.message||'Could not answer.')}</span>`;
+      // In the YouTube/reader view the ask pane starts short (just the box). Once
+      // there's an answer to read, grow it so the response is visible without the
+      // user having to drag the divider - but only if they haven't enlarged it.
+      const rp=document.getElementById('readerAsk');
+      if(rp && container.closest('#readerAsk')){
+        const cur=rp.offsetHeight;
+        const want=Math.min((rp.parentElement.clientHeight||600)-200, 300);
+        if(cur < want) rp.style.height=want+'px';
+        thread.scrollIntoView({behavior:'smooth',block:'end'});
+      }
     }catch(e){qa.querySelector('.aa').className='aa';qa.querySelector('.aa').textContent='Something went wrong. Try again.';}
     btn.disabled=false;ta.focus();
   };
@@ -878,10 +924,10 @@ async function restoreSummary(sid){
   if(!r.ok)return;
   const p=r.payload||{};
   if(p.is_youtube&&p.segments&&p.segments.length){
-    openReader({title:p.title,source_label:p.source_label,is_youtube:true,video_id:p.video_id,segments:p.segments,summary_md:p.summary_md,bullets_md:p.bullets_md});
+    openReader({title:p.title,source_label:p.source_label,is_youtube:true,video_id:p.video_id,segments:p.segments,summary_md:p.summary_md,bullets_md:p.bullets_md,detailed_md:p.detailed_md});
   }else{
     $('#sumWrap').style.display='block';
-    window.__pageFull=p.summary_md||'';window.__pageBullets=p.bullets_md||'';
+    window.__pageFull=p.summary_md||'';window.__pageBullets=p.bullets_md||'';window.__pageDetailed=p.detailed_md||'';
     renderPageSummary('full');
     $('#sumSrcLabel').textContent=p.source_label||p.title||'';
     const pa=$('#pageAsk');pa.innerHTML=askBoxHTML('Have questions about this? Ask here:');
@@ -902,6 +948,48 @@ loadSessions();
 loadProviders();loadModes();gdriveStatus();syncSrc();
 window.__renderForShot=(md,prompts,labels)=>renderReport(md,prompts,labels);
 window.__renderSumForShot=(md,label)=>{$('#sumEmpty').style.display='none';$('#sumWrap').style.display='block';$('#sumBody').innerHTML=mdToHtml(md);$('#sumSrcLabel').textContent=label||'';};
+
+/* ---- Live system-load meter (CPU / GPU / VRAM / RAM) ---- */
+(function(){
+  const box=$('#sysmon'),showBtn=$('#sysmonShow');
+  let hidden=false, gpuSeen=false;
+  // green under 90%, red at 90% and above
+  function colorFor(pct){
+    if(pct==null) return 'rgba(255,255,255,.18)';
+    return pct < 90 ? '#3fb98a' : '#e05c5c';
+  }
+  function setGauge(barId,valId,pct,label){
+    const bar=document.getElementById(barId),val=document.getElementById(valId);
+    if(!bar||!val) return;
+    if(pct==null){bar.style.width='0%';bar.style.background='rgba(255,255,255,.18)';val.textContent='—';return;}
+    bar.style.width=Math.max(0,Math.min(100,pct))+'%';
+    bar.style.background=colorFor(pct);
+    val.textContent=(label!=null?label:Math.round(pct)+'%');
+  }
+  async function tick(){
+    if(hidden) return;
+    try{
+      const r=await fetch('/api/sysload');const d=await r.json();
+      setGauge('smCpuBar','smCpuVal',d.cpu_percent);
+      // GPU rows: show only if a GPU was detected
+      const gpuRows=[document.getElementById('smGpuBar')?.closest('.smRow'),
+                     document.getElementById('smVramBar')?.closest('.smRow')];
+      if(d.gpu_available){gpuSeen=true;gpuRows.forEach(x=>x&&(x.style.display='flex'));
+        setGauge('smGpuBar','smGpuVal',d.gpu_percent);
+        const vlabel=(d.gpu_mem_used_gb!=null&&d.gpu_mem_total_gb!=null)?(d.gpu_mem_used_gb+'/'+d.gpu_mem_total_gb):null;
+        setGauge('smVramBar','smVramVal',d.gpu_mem_percent, vlabel?Math.round(d.gpu_mem_percent)+'%':null);
+        if(vlabel){document.getElementById('smVramVal').textContent=Math.round(d.gpu_mem_percent)+'%';document.getElementById('smVramVal').title=vlabel+' GB';}
+      }else if(!gpuSeen){gpuRows.forEach(x=>x&&(x.style.display='none'));}
+      const rlabel=(d.ram_used_gb!=null&&d.ram_total_gb!=null)?Math.round(d.ram_percent)+'%':null;
+      setGauge('smRamBar','smRamVal',d.ram_percent,rlabel);
+      if(d.ram_used_gb!=null){document.getElementById('smRamVal').title=d.ram_used_gb+'/'+d.ram_total_gb+' GB';}
+    }catch(e){/* keep last values on a hiccup */}
+  }
+  $('#smClose').onclick=()=>{hidden=true;box.classList.add('hidden');showBtn.style.display='block';};
+  showBtn.onclick=()=>{hidden=false;box.classList.remove('hidden');showBtn.style.display='none';tick();};
+  box.classList.remove('hidden');         // visible by default
+  tick(); setInterval(tick,1500);
+})();
 </script>
 </body>
 </html>

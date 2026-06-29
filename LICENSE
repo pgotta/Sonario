@@ -19,3 +19,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+--------------------------------------------------------------------------------
+
+Third-party AI providers
+
+Sonario sends text to an AI model of your choosing over the standard
+OpenAI-compatible API. The local models run through Ollama (https://ollama.com),
+and the optional cloud providers (OpenAI, Google Gemini) are third-party services.
+These are not part of Sonario and carry their own licenses and terms of service;
+refer to each for its requirements.

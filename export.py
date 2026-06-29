@@ -17,8 +17,49 @@ def _stamp():
     return datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
+def _slug(source_label):
+    """Turn a source label into a short, safe, descriptive filename prefix.
+
+    The label may be a folder path, a document/video title, or - when several
+    folders were analyzed at once - a "A + B + C" string. We want the filename to
+    say WHAT was analyzed:
+      - multiple sources joined by " + "  -> use just the first one
+      - a path                            -> use its final folder/file name
+      - a title                           -> cleaned up
+    Falls back to 'report' if nothing usable. Always returns a filesystem-safe,
+    length-capped string.
+    """
+    s = (source_label or "").strip()
+    if not s:
+        return "report"
+    # Strip Markdown bold markers the summary header uses around the title.
+    s = s.replace("**", "")
+    # If several sources/fields were combined, keep only the FIRST piece - that's
+    # the folder name or the document/video title; the rest is metadata or extra
+    # folders we deliberately drop ("if it's more than one folder just pick one").
+    for sep in (" · ", " + ", " | ", ", "):
+        if sep in s:
+            s = s.split(sep)[0].strip()
+            break
+    # Strip a leading descriptor some labels carry (e.g. "Folder: ", "Video: ").
+    s = re.sub(r"^(folder|video|document|file|source|youtube)\s*[:\-]\s*", "",
+               s, flags=re.IGNORECASE).strip()
+    # If it looks like a path, take the last component (the folder/file name).
+    if ("\\" in s) or ("/" in s):
+        s = re.split(r"[\\/]", s.rstrip("\\/"))[-1] or s
+    # Drop a file extension if present.
+    s = re.sub(r"\.(txt|md|pdf|docx?|epub|html?)$", "", s, flags=re.IGNORECASE)
+    # Keep letters, numbers, spaces, dashes; collapse the rest to underscores.
+    s = re.sub(r"[^\w\s-]", "", s, flags=re.UNICODE).strip()
+    s = re.sub(r"[\s]+", "_", s)
+    s = re.sub(r"_+", "_", s).strip("_-")
+    if not s:
+        return "report"
+    return s[:60]  # keep filenames sane
+
+
 def save_markdown(report_md, source_label=""):
-    name = f"insight_report_{_stamp()}.md"
+    name = f"{_slug(source_label)}_{_stamp()}.md"
     path = os.path.join(OUTPUT_DIR, name)
     header = f"<!-- Source: {source_label} | Generated: {datetime.datetime.now():%Y-%m-%d %H:%M} -->\n\n"
     with open(path, "w", encoding="utf-8") as f:
@@ -34,7 +75,7 @@ def save_pdf(report_md, source_label=""):
     from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
                                     ListFlowable, ListItem)
 
-    name = f"insight_report_{_stamp()}.pdf"
+    name = f"{_slug(source_label)}_{_stamp()}.pdf"
     path = os.path.join(OUTPUT_DIR, name)
 
     doc = SimpleDocTemplate(path, pagesize=LETTER,

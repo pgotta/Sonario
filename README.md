@@ -5,6 +5,7 @@
   <p>
     <img src="https://img.shields.io/badge/license-MIT-5cc7a4">
     <img src="https://img.shields.io/badge/python-3.10%2B-354c67">
+    <img src="https://img.shields.io/badge/local--first-private-5cc7a4">
   </p>
 </div>
 
@@ -20,27 +21,44 @@ across them. You pick an interpretation lens, or let **Auto** choose.
 download: a Word doc, PDF, EPUB (whole book), text file, a YouTube link, or a web
 page.
 
-It runs as a small local web app at `http://127.0.0.1:5005`. You bring your own
-AI provider; the default is **DeepSeek**, which is free, fast, and needs no API
-key.
+It runs as a small, **local-first** web app at `http://127.0.0.1:5005`. You bring
+your own AI provider; the default, **Qwen3 8B**, runs fully on your own machine via
+[Ollama](https://ollama.com) — no account, no API key, and nothing leaves your
+computer. It's recommended for a typical gaming laptop (8GB GPU). If you'd rather
+use a cloud model, OpenAI and Gemini are one dropdown click away (bring your own
+key).
 
 <div align="center">
-  <img src="docs/screenshot-analyze.png" width="49%" alt="Analyze Collection with interpretation modes">
-  <img src="docs/screenshot-summarize.png" width="49%" alt="Summarizer with the sonar-sweep scan">
+  <img src="docs/screenshot-youtube-reader.png" alt="Sonario's two-pane YouTube summary reader: timestamped transcript on the left, summary on the right" width="90%">
+  <br>
+  <em>The YouTube reader: timestamped transcript on the left, the summary (with an ask-a-question box) on the right.</em>
 </div>
 
 > **Setup and installation live in [BUILD.md](BUILD.md).** This README covers what
-> Sonario does and how to use it. BUILD.md covers the `.bat` scripts, the free
-> Windows Copilot backend, and the Google Drive setup.
+> Sonario does and how to use it. BUILD.md covers the `.bat` scripts, the local
+> Ollama models, and the Google Drive setup.
+
+## Contents
+
+- [Quick start](#quick-start)
+- [Analyze Collection](#analyze-collection)
+- [Summarizer](#summarizer)
+- [AI providers](#ai-providers)
+- [Supported files](#supported-files)
+- [Adding providers](#adding-providers)
+- [Tested hardware](#tested-hardware)
+- [Project layout](#project-layout)
+- [Notes](#notes)
+- [License](#license)
 
 ## Quick start
 
 1. Follow **[BUILD.md](BUILD.md)** once to install (it is mostly double-clicking
    `setup.bat`).
-2. Run **`deepseek_setup.bat`** once to set up the free default provider (it
-   downloads the bridge, signs you into DeepSeek once, and starts it in the
-   background). Prefer Windows Copilot instead? Run `copilot_setup.bat` and pick
-   it from the provider dropdown.
+2. Set up the default local model: double-click **`ollama_setup.bat`** (it installs
+   [Ollama](https://ollama.com) if needed and pulls the models, once). This runs
+   fully on your machine with nothing sent to any provider. *Prefer a cloud model?*
+   Pick OpenAI or Gemini from the dropdown and paste your API key.
 3. Double-click **`run.bat`** to start the app, then open
    `http://127.0.0.1:5005` if it does not open by itself.
 4. Use the top tabs to switch between **Analyze Collection** and **Summarizer**.
@@ -115,45 +133,55 @@ summarized, and the section summaries are folded down (repeatedly if needed) unt
 a one-page summary fits. It will not crash on a 500-page book or a 2-hour video.
 Two honest caveats:
 
-- **Time on Copilot.** Copilot is paced (about 4s per call, one at a time). A
-  1-hour video is roughly 1 to 2 minutes; a short book a few minutes; a 500-page
-  book about 15 to 20 minutes and hundreds of calls. Cloud providers
-  (OpenAI / Gemini) are much faster.
+- **Time locally.** On a typical 8GB gaming laptop, a 1-hour video is a few
+  minutes, a short book a few minutes, a 500-page book longer (hundreds of calls).
+  Cloud providers (OpenAI / Gemini) are faster but send your text to their servers.
 - **Detail.** Folding a whole book into one page is inherently high level: you
-  get themes and arc, not chapter-by-chapter nuance.
+  get themes and arc, not chapter-by-chapter nuance. (The Summarizer's **Detailed**
+  view gives a much longer, in-depth version when you want more.)
 
-If a section fails mid-run (for example a transient Copilot error during a long
-book), that section is skipped and the summary still completes with a note that it
-may be incomplete, so one flaky call does not waste a long run.
+If a section fails mid-run (for example a transient error during a long book),
+that section is skipped and the summary still completes with a note that it may be
+incomplete, so one flaky call does not waste a long run.
 
 ## AI providers
 
-Both screens share the same providers. The default is free.
+Both screens share the same providers. The default is free and fully local. Hover
+any provider in the dropdown for a short description of when to use it.
 
 | Provider | Cost | Where it runs | Needs |
 |---|---|---|---|
-| **DeepSeek** / **DeepSeek Expert** *(default)* | Free, no key | Your normal DeepSeek account (cloud) | `deepseek_setup.bat`, see BUILD.md |
-| **Windows Copilot** | Free, no key | Your normal Copilot account (cloud) | `copilot_setup.bat`, see BUILD.md |
-| **Ollama** | Free | Fully local on your machine | [Ollama](https://ollama.com) and a pulled model |
+| **Qwen3 8B** *(recommended, default)* | Free | **Fully local** on your GPU | [Ollama](https://ollama.com) + `ollama_setup.bat` |
+| **Smart routing** | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `ollama_setup.bat` (phi4-mini + qwen3:8b) |
+| **Phi-4-mini** *(lightweight)* | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `ollama pull phi4-mini` |
+| **Ollama** *(any model)* | Free | Fully local on your machine | [Ollama](https://ollama.com) and any pulled model |
 | **OpenAI** | A few cents to ~$2 per 200 docs | Cloud | API key |
 | **Gemini** | Free tier or key | Cloud | API key |
 
-All speak the OpenAI-compatible format, so switching is just a dropdown. Add your
-own in [`models.json`](#adding-providers) (ships with LM Studio and OpenRouter).
+All speak the OpenAI-compatible format, so switching is just a dropdown. Advanced
+users can add their own in [`models.json`](#adding-providers).
 
-> **DeepSeek** works just like the Copilot bridge: a small local server
-> ([Deepseek-API](https://github.com/sums001/Deepseek-API) by sums001) turns your
-> free signed-in DeepSeek account into a local API. Run `deepseek_setup.bat` once
-> (it downloads the bridge, signs you in, and starts it on `localhost:8001` so it
-> never clashes with Copilot on `8000`). Pick **DeepSeek** for the fast model or
-> **DeepSeek Expert** for the stronger, slower one. Because it's a separate account
-> from Copilot, it's also a handy fallback if your Copilot session is rate-limited.
+> **Qwen3 8B (the default).** One strong local model that does every step at full
+> quality. It's the best all-round choice for a typical 8GB gaming laptop — fully
+> private, no account, can't be rate-limited. Run **`ollama_setup.bat`** once.
+
+> **Smart routing (optional).** Splits the work between two local models: the
+> lightweight **phi4-mini** for the heavy repetitive parts (per-chunk summaries,
+> classification) and **qwen3:8b** for the final write-up. This is lighter on very
+> long jobs, but the chunk-level work is lower quality than running Qwen3 8B for
+> everything, and on an 8GB GPU the two models can't both stay resident so Ollama
+> swaps between them. Use it if long-job speed matters more than maximum quality.
+
+> **Phi-4-mini (lightweight).** The smallest, fastest local model. Best for weaker
+> or CPU-only machines, or when speed matters more than depth. Lower quality on
+> long or complex sources.
 
 > **A note on privacy.** Sonario runs locally, but where your *text* goes depends
-> on the provider. With **Ollama** everything stays on your machine. With
-> **Windows Copilot** or any cloud provider, the text of your documents is sent to
-> that provider to generate the result. If a source is sensitive, use Ollama.
-> Sonario shows a heads-up if you pair Google Drive with the Copilot bridge.
+> on the provider. With the **local** models (Qwen3 8B, Phi-4-mini, smart routing,
+> or any Ollama model) everything stays on your machine. With a **cloud** provider
+> (OpenAI, Gemini), the text of your documents is sent to that provider to generate
+> the result. If a source is sensitive, use a local model. Sonario shows a heads-up
+> if you pair Google Drive with a cloud provider.
 
 ## Supported files
 
@@ -181,6 +209,31 @@ Restart and it appears in both dropdowns.
 }
 ```
 
+## Tested hardware
+
+Sonario was built and tested on this machine. It is not a minimum spec, just the
+reference setup the defaults are tuned for:
+
+| Component | Spec |
+|---|---|
+| **OS** | Windows 11 |
+| **GPU** | NVIDIA RTX 5060 Laptop GPU (8 GB VRAM) |
+| **RAM** | 16 GB |
+| **Python** | 3.10+ |
+
+What this means for the providers:
+
+- **Cloud providers** (OpenAI, Gemini) don't depend on
+  your hardware at all — the work happens on their servers. Any modern PC is fine.
+- **Local default (smart routing: phi4-mini + qwen3:8b)** needs ~8 GB total for the
+  two models. On the 8 GB GPU above they can't both stay resident, so Ollama swaps
+  between them as the job moves between roles — it works, but adds a short pause on
+  each swap, so long jobs aren't instant. A GPU with more VRAM (12 GB+) would hold
+  both at once and run much faster.
+- **Want to avoid swapping?** Pick a single-model local provider (Qwen3 8B on its
+  own, or the lighter Phi-4-mini) so only one model loads — no swap pauses, at the
+  cost of either depth (Phi-4-mini) or the fast/slow split.
+
 ## Project layout
 
 ```
@@ -206,3 +259,7 @@ static/         single-file SPA + icons
 ## License
 
 MIT &copy; pgotta. See [LICENSE](LICENSE).
+
+Local models run through [Ollama](https://ollama.com) and the cloud options
+(OpenAI, Gemini) are third-party services with their own licenses and terms;
+Sonario just talks to them over the standard OpenAI-compatible API.

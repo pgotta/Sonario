@@ -11,9 +11,9 @@ credentials/token.json
 history/
 history/*.json
 
+# Windows .bat launchers — kept local, documented in BUILD.md, never committed
+*.bat
+
 # Optional local LLM bridges (downloaded by their setup .bat, never committed)
 Windows-Copilot-API/
 Deepseek-API/
-
-# local launchers kept off GitHub
-*.bat
