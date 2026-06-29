@@ -7,6 +7,7 @@
     <img src="https://img.shields.io/badge/python-3.10%2B-354c67">
     <img src="https://img.shields.io/badge/local--first-private-5cc7a4">
   </p>
+  <img src="docs/screenshot-hero.png" alt="Sonario home screen: the radar logo with Analyze Collection and Summarizer tabs" width="92%">
 </div>
 
 ---
@@ -77,6 +78,13 @@ one-page report on the patterns that recur across the whole collection. Tick
 **Windows folder**, **Google Drive folder**, or **both**; selected sources are
 scanned together into one report, and subfolders are read automatically.
 
+<div align="center">
+  <!-- PLACEHOLDER: replace with a real screenshot saved as docs/screenshot-analyze.png -->
+  <img src="https://placehold.co/1100x620/0f1b2a/5cc7a4?text=Analyze+Collection+%E2%80%94+screenshot" alt="Analyze Collection screen" width="90%">
+  <br>
+  <em>Analyze Collection: pick your folders, choose a lens, and run.</em>
+</div>
+
 You choose an **interpretation lens** that changes what the AI looks for and how
 the report reads:
 
@@ -94,6 +102,13 @@ questions, research questions, and so on), all built from what recurs.
 After a report is ready you can **ask questions** about the documents in the box
 at the bottom. It reads the full raw text, so it can answer specifics the summary
 left out, and counting questions (put a word in "quotes") are answered exactly.
+
+<div align="center">
+  <!-- PLACEHOLDER: replace with a real screenshot saved as docs/screenshot-report.png -->
+  <img src="https://placehold.co/1100x620/0f1b2a/5cc7a4?text=Report+output+%E2%80%94+screenshot" alt="A finished analysis report" width="90%">
+  <br>
+  <em>A finished report: recurring themes, the lens's sections, and a question box.</em>
+</div>
 
 ### How Analyze works
 
@@ -114,7 +129,15 @@ so delete `cache/` (or expect a fresh pass) when you change modes.
 
 Drop in a file or paste a link and get a structured, skimmable summary with
 sub-headings, bullet points, and tables where the content supports them. A
-**Full / Bullets** toggle switches between the full notes and a shorter outline.
+**Detailed / Normal / Bullets** toggle switches between a long in-depth version,
+the standard one-page notes, and a short outline.
+
+<div align="center">
+  <!-- PLACEHOLDER: replace with a real screenshot saved as docs/screenshot-summarizer.png -->
+  <img src="https://placehold.co/1100x620/0f1b2a/5cc7a4?text=Summarizer+%E2%80%94+screenshot" alt="The Summarizer screen" width="90%">
+  <br>
+  <em>The Summarizer: a file, ebook, YouTube link, or web page in; a clean summary out.</em>
+</div>
 
 | Source | Notes |
 |---|---|
