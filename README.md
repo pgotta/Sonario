@@ -1,12 +1,5 @@
 <div align="center">
-  <img src="docs/icon.png" width="120" alt="Sonario">
-  <h1>Sonar<span>io</span></h1>
-  <p><em>Sonar for your media: deep-scan and analyze an entire collection of documents, summarize a YouTube video, recap an ebook, and more.</em></p>
-  <p>
-    <img src="https://img.shields.io/badge/license-MIT-5cc7a4">
-    <img src="https://img.shields.io/badge/python-3.10%2B-354c67">
-    <img src="https://img.shields.io/badge/local--first-private-5cc7a4">
-  </p>
+
   <img src="docs/screenshot-hero.png" alt="Sonario home screen: the radar logo with Analyze Collection and Summarizer tabs" width="92%">
 </div>
 
@@ -79,8 +72,7 @@ one-page report on the patterns that recur across the whole collection. Tick
 scanned together into one report, and subfolders are read automatically.
 
 <div align="center">
-  <!-- PLACEHOLDER: replace with a real screenshot saved as docs/screenshot-analyze.png -->
-  <img src="https://placehold.co/1100x620/0f1b2a/5cc7a4?text=Analyze+Collection+%E2%80%94+screenshot" alt="Analyze Collection screen" width="90%">
+  <img src="docs\Analyze.png" alt="Analyze Collection screen" width="90%">
   <br>
   <em>Analyze Collection: pick your folders, choose a lens, and run.</em>
 </div>
@@ -104,8 +96,7 @@ at the bottom. It reads the full raw text, so it can answer specifics the summar
 left out, and counting questions (put a word in "quotes") are answered exactly.
 
 <div align="center">
-  <!-- PLACEHOLDER: replace with a real screenshot saved as docs/screenshot-report.png -->
-  <img src="https://placehold.co/1100x620/0f1b2a/5cc7a4?text=Report+output+%E2%80%94+screenshot" alt="A finished analysis report" width="90%">
+  <img src="docs\reportoutput.png" alt="A finished analysis report" width="90%">
   <br>
   <em>A finished report: recurring themes, the lens's sections, and a question box.</em>
 </div>
@@ -133,8 +124,7 @@ sub-headings, bullet points, and tables where the content supports them. A
 the standard one-page notes, and a short outline.
 
 <div align="center">
-  <!-- PLACEHOLDER: replace with a real screenshot saved as docs/screenshot-summarizer.png -->
-  <img src="https://placehold.co/1100x620/0f1b2a/5cc7a4?text=Summarizer+%E2%80%94+screenshot" alt="The Summarizer screen" width="90%">
+  <img src="docs\summarizerpfd.png" alt="The Summarizer screen" width="90%">
   <br>
   <em>The Summarizer: a file, ebook, YouTube link, or web page in; a clean summary out.</em>
 </div>
