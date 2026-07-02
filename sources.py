@@ -166,7 +166,12 @@ def fetch_webpage(url, fetched_html=None):
 
 # ── EPUB (whole book) ─────────────────────────────────────────────────────────
 def fetch_epub(path):
-    """Return (text, meta) with chapter-joined text for the whole book."""
+    """Return (text, meta) with chapter-joined text for the whole book.
+
+    meta also includes a 'chapters' list of {title, text} so the Summarizer's
+    Chapter mode can summarize each chapter separately. Chapter titles come from
+    the first heading in each document, falling back to a numbered label.
+    """
     from ebooklib import epub
     import ebooklib
     from bs4 import BeautifulSoup
@@ -180,17 +185,24 @@ def fetch_epub(path):
     except Exception:
         pass
 
-    chapters = []
+    chapters = []          # list of {title, text}
     for item in book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
         soup = BeautifulSoup(item.get_content(), "lxml")
         for t in soup(["script", "style"]):
             t.decompose()
+        # chapter title: first heading if present
+        head = soup.find(["h1", "h2", "h3"])
+        ch_title = head.get_text(" ", strip=True) if head else ""
         txt = soup.get_text("\n", strip=True)
         if len(txt) > 200:  # skip nav/cover/short fragments
-            chapters.append(txt)
-    text = "\n\n".join(chapters)
+            if not ch_title:
+                ch_title = f"Chapter {len(chapters) + 1}"
+            chapters.append({"title": ch_title[:120], "text": txt})
+
+    text = "\n\n".join(c["text"] for c in chapters)
     return text, {"title": title or "EPUB book", "kind": "EPUB book",
-                  "chapter_count": len(chapters)}
+                  "chapter_count": len(chapters),
+                  "chapters": chapters}
 
 
 # ── Files (dispatch) ──────────────────────────────────────────────────────────

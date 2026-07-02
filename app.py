@@ -434,8 +434,34 @@ def ask():
             extra = SUM.get("summary_md") or ""
             if not context and not extra:
                 return jsonify({"ok": False, "message": "Summarize something first."})
-        answer = pipeline.answer_question(prov, question, context, extra=extra)
-        return jsonify({"ok": True, "answer": answer})
+        result = pipeline.answer_question(prov, question, context, extra=extra)
+        answer = result.get("answer", "") if isinstance(result, dict) else result
+        citations = result.get("citations", []) if isinstance(result, dict) else []
+
+        # For a YouTube transcript, map each citation's char offset to the nearest
+        # segment timestamp so the UI can make it a clickable jump. The transcript
+        # text is " ".join(segment texts), so we can rebuild each segment's start
+        # offset and find which segment a citation falls in.
+        segments = SUM.get("segments") if scope != "analyze" else None
+        if citations and segments:
+            bounds = []  # (char_start, ts, t_seconds)
+            pos = 0
+            for seg in segments:
+                bounds.append((pos, seg.get("ts", ""), seg.get("t", 0)))
+                pos += len(seg.get("text", "")) + 1  # +1 for the joining space
+            for c in citations:
+                cs = c.get("char_start", 0)
+                # find the last segment whose start offset is <= the citation
+                ts, tsec = "", 0
+                for b_start, b_ts, b_t in bounds:
+                    if b_start <= cs:
+                        ts, tsec = b_ts, b_t
+                    else:
+                        break
+                c["ts"] = ts
+                c["t"] = tsec
+
+        return jsonify({"ok": True, "answer": answer, "citations": citations})
     except Exception as e:
         return jsonify({"ok": False, "message": str(e)})
 
@@ -459,6 +485,7 @@ def history_get(kind, sid):
             SUM["summary_md"] = payload.get("summary_md")
             SUM["bullets_md"] = payload.get("bullets_md")
             SUM["detailed_md"] = payload.get("detailed_md")
+            SUM["chapter_md"] = payload.get("chapter_md")
             SUM["source_text"] = payload.get("source_text")
             SUM["source_label"] = payload.get("source_label", "")
             SUM["title"] = payload.get("title", "")
@@ -530,7 +557,7 @@ def download(kind):
 SUM = {
     "running": False, "stage": "idle", "detail": "",
     "summary_md": None, "md_path": None, "pdf_path": None,
-    "bullets_md": None, "detailed_md": None,
+    "bullets_md": None, "detailed_md": None, "chapter_md": None,
     "source_label": "", "title": "", "error": None,
     "is_youtube": False, "video_id": None, "segments": None,
     "source_text": None,
@@ -596,6 +623,13 @@ def _sum_progress(d):
         SUM["phase"] = "finalizing"
         SUM["detail"] = "Writing the long Detailed version…"
         SUM["eta_sec"] = None
+    elif ph == "chapters":
+        SUM["stage"] = "synthesizing"
+        SUM["phase"] = "finalizing"
+        c = d.get("chunk"); t = d.get("chunks")
+        SUM["detail"] = (f"Summarizing chapter {c} of {t}…" if c and t
+                         else "Summarizing each chapter…")
+        SUM["eta_sec"] = None
     elif ph == "summarizing":
         SUM["stage"] = "summarizing"
         SUM["phase"] = "summarizing"
@@ -656,6 +690,18 @@ def run_summary(cfg):
         SUM["detailed_md"] = detailed
         SUM["source_text"] = text  # kept for the follow-up Q&A box
 
+        # EPUBs carry per-chapter text: generate a chapter-by-chapter summary for
+        # the "Chapter" toggle. Only EPUBs have this; other sources leave it empty.
+        chapters = meta.get("chapters") or []
+        if chapters:
+            try:
+                SUM["chapter_md"] = pipeline.summarize_chapters(
+                    provider, chapters, progress=_sum_progress)
+            except Exception:
+                SUM["chapter_md"] = ""
+        else:
+            SUM["chapter_md"] = ""
+
         head = pipeline.summary_header(meta)
         full_md = (f"# Summary\n\n_{head}_\n\n" if head else "# Summary\n\n") + summary
         SUM["md_path"] = export.save_markdown(full_md, SUM["source_label"])
@@ -671,6 +717,7 @@ def run_summary(cfg):
             "summary_md": SUM.get("summary_md"),
             "bullets_md": SUM.get("bullets_md"),
             "detailed_md": SUM.get("detailed_md"),
+            "chapter_md": SUM.get("chapter_md"),
             "source_text": SUM.get("source_text"),
             "is_youtube": SUM.get("is_youtube", False),
             "video_id": SUM.get("video_id"),
@@ -755,6 +802,7 @@ def summary_status():
         "summary_md": SUM["summary_md"] if done else None,
         "bullets_md": SUM["bullets_md"] if done else None,
         "detailed_md": SUM["detailed_md"] if done else None,
+        "chapter_md": SUM["chapter_md"] if done else None,
         "has_pdf": bool(SUM["pdf_path"]),
         "is_youtube": SUM["is_youtube"] if done else False,
         "video_id": SUM["video_id"] if done else None,

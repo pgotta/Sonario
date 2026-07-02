@@ -222,6 +222,13 @@
   .qa .aa{color:var(--ink-soft);font-size:14px;line-height:1.65}
   .qa .aa p{margin:.4em 0}
   .qa .aa ul{margin:.4em 0;padding-left:20px}
+  .cite{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;margin:0 1px;font-size:10px;font-weight:700;line-height:16px;
+    border-radius:5px;background:var(--good-bg,#1f4d3a);color:var(--good,#5cc7a4);cursor:pointer;vertical-align:super;text-decoration:none;transition:background .15s,color .15s}
+  .cite:hover{background:var(--good,#5cc7a4);color:#0f1b2a}
+  .cite.nolink{cursor:help}
+  .tline.cited{background:rgba(92,199,164,.14);border-radius:6px;transition:background 1.2s}
+  .citenote{margin-top:8px;font-size:12px;color:var(--muted)}
+  .citenote .cs{display:block;margin:3px 0;padding-left:8px;border-left:2px solid var(--panel-3)}
   .askwait{color:var(--muted);font-size:13px;font-style:italic}
   @media(max-width:740px){
     .reader-panes{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
@@ -562,7 +569,7 @@
       <div class="card" id="sumProgress" style="display:none"><div class="sonarwrap"><div class="sonar" style="--sz:108px"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="cross h"></div><div class="cross v"></div><div class="sweep"></div><div class="line"></div><div class="blip"></div></div><div class="slabel" id="sumStageHead">Working…</div><div class="ssub" id="sumStageSub"></div></div><div class="pbar" style="margin-top:6px"><i id="sumPbar" style="width:35%"></i></div></div>
       <div id="sumEmpty" class="empty" style="display:none">No summary yet.</div>
       <div id="sumWrap" style="display:none">
-        <div class="dlbar"><span class="srclabel" id="sumSrcLabel"></span><span class="seg2" id="pageToggle" style="display:none;margin-right:auto"><button id="pgDet" onclick="renderPageSummary('detailed')">Detailed</button><button id="pgFull" class="on" onclick="renderPageSummary('full')">Normal</button><button id="pgBul" onclick="renderPageSummary('bullets')">Bullets</button></span><button class="btn ghost small" id="sumDlMd">Download .md</button><button class="btn teal small" id="sumDlPdf">Download .pdf</button></div>
+        <div class="dlbar"><span class="srclabel" id="sumSrcLabel"></span><span class="seg2" id="pageToggle" style="display:none;margin-right:auto"><button id="pgDet" onclick="renderPageSummary('detailed')">Detailed</button><button id="pgFull" class="on" onclick="renderPageSummary('full')">Normal</button><button id="pgChap" onclick="renderPageSummary('chapter')">Chapter</button><button id="pgBul" onclick="renderPageSummary('bullets')">Bullets</button></span><button class="btn ghost small" id="sumDlMd">Download .md</button><button class="btn teal small" id="sumDlPdf">Download .pdf</button></div>
         <article class="report" id="sumBody"></article>
         <div id="pageAsk"></div>
       </div>
@@ -589,6 +596,7 @@
           <span class="seg2" id="summaryToggle" style="margin-left:auto;display:none">
             <button id="tgDet" onclick="renderSummaryPane('detailed')">Detailed</button>
             <button id="tgFull" class="on" onclick="renderSummaryPane('full')">Normal</button>
+            <button id="tgChap" onclick="renderSummaryPane('chapter')">Chapter</button>
             <button id="tgBul" onclick="renderSummaryPane('bullets')">Bullets</button>
           </span>
         </div>
@@ -674,14 +682,14 @@ function clearFile(){sumFile=null;$('#fileChipWrap').innerHTML='';fileInput.valu
 function sumCfgForm(){const fd=new FormData();const p=PROVIDERS[$('#sumProvider').value]||{};fd.append('provider',$('#sumProvider').value);fd.append('model',$('#sumModel').value.trim());fd.append('fast_model',p.fast_model||'');fd.append('base_url',$('#sumBaseUrl').value.trim());fd.append('api_key',$('#sumApiKey').value.trim());fd.append('input_type',sumInput);if(sumInput==='file'){if(!sumFile){alert('Choose a file first.');return null;}fd.append('file',sumFile);}else{const link=$('#sumLink').value.trim();if(!link){alert('Paste a link first.');return null;}fd.append('link',link);}return fd;}
 $('#sumStart').onclick=async()=>{const fd=sumCfgForm();if(!fd)return;$('#sumStart').disabled=true;$('#sumProgress').style.display='block';$('#sumWrap').style.display='none';$('#sumEmpty').style.display='none';$('#sumStageHead').textContent='Working…';$('#sumStageSub').textContent='Fetching your source…';$('#sumPbar').style.width='20%';const r=await(await fetch('/api/summarize',{method:'POST',body:fd})).json();if(!r.ok){$('#sumStart').disabled=false;$('#sumProgress').style.display='none';alert(r.message||'Could not start.');return;}startSumPolling();};
 function startSumPolling(){if(sumPolling)clearInterval(sumPolling);sumPolling=setInterval(sumTick,1100);sumTick();}
-async function sumTick(){let s;try{s=await(await fetch('/api/summary_status')).json();}catch(e){return;}const L={fetching:'Fetching source',summarizing:'Summarizing',condensing:'Reading in sections',synthesizing:'Writing the summary',done:'Summary ready',error:'Something went wrong',idle:'Idle'};$('#sumStageHead').textContent=L[s.stage]||s.stage;$('#sumStageSub').textContent=s.error?s.error:(s.detail||'');$('#sumPbar').style.width=(s.pct!=null?s.pct:40)+'%';if(s.stage==='done'){clearInterval(sumPolling);sumPolling=null;$('#sumStart').disabled=false;$('#sumProgress').style.display='none';loadSessions();if(s.is_youtube&&s.segments&&s.segments.length){openReader(s);}else{$('#sumWrap').style.display='block';window.__pageFull=s.summary_md||'';window.__pageBullets=s.bullets_md||'';window.__pageDetailed=s.detailed_md||'';renderPageSummary('full');$('#sumSrcLabel').textContent=s.source_label||'';const pa=$('#pageAsk');pa.innerHTML=askBoxHTML('Have questions about this? Ask here:');wireAsk(pa.querySelector('.askbox'),'summary',sumProviderCfg);}}else if(s.stage==='error'||!s.running){clearInterval(sumPolling);sumPolling=null;$('#sumStart').disabled=false;if(s.stage==='error'){$('#sumProgress').style.display='block';}}}
-function renderPageSummary(mode){const hasBul=!!window.__pageBullets;const hasDet=!!window.__pageDetailed;let md;if(mode==='bullets'&&hasBul)md=window.__pageBullets;else if(mode==='detailed'&&hasDet)md=window.__pageDetailed;else{mode='full';md=window.__pageFull;}$('#sumBody').innerHTML=mdToHtml(md);$('#pgFull').classList.toggle('on',mode==='full');$('#pgBul').classList.toggle('on',mode==='bullets');$('#pgDet').classList.toggle('on',mode==='detailed');$('#pgDet').style.display=hasDet?'inline-block':'none';$('#pgBul').style.display=hasBul?'inline-block':'none';$('#pageToggle').style.display=(hasBul||hasDet)?'inline-flex':'none';}
+async function sumTick(){let s;try{s=await(await fetch('/api/summary_status')).json();}catch(e){return;}const L={fetching:'Fetching source',summarizing:'Summarizing',condensing:'Reading in sections',synthesizing:'Writing the summary',done:'Summary ready',error:'Something went wrong',idle:'Idle'};$('#sumStageHead').textContent=L[s.stage]||s.stage;$('#sumStageSub').textContent=s.error?s.error:(s.detail||'');$('#sumPbar').style.width=(s.pct!=null?s.pct:40)+'%';if(s.stage==='done'){clearInterval(sumPolling);sumPolling=null;$('#sumStart').disabled=false;$('#sumProgress').style.display='none';loadSessions();if(s.is_youtube&&s.segments&&s.segments.length){openReader(s);}else{$('#sumWrap').style.display='block';window.__pageFull=s.summary_md||'';window.__pageBullets=s.bullets_md||'';window.__pageDetailed=s.detailed_md||'';window.__pageChapter=s.chapter_md||'';renderPageSummary('full');$('#sumSrcLabel').textContent=s.source_label||'';const pa=$('#pageAsk');pa.innerHTML=askBoxHTML('Have questions about this? Ask here:');wireAsk(pa.querySelector('.askbox'),'summary',sumProviderCfg);}}else if(s.stage==='error'||!s.running){clearInterval(sumPolling);sumPolling=null;$('#sumStart').disabled=false;if(s.stage==='error'){$('#sumProgress').style.display='block';}}}
+function renderPageSummary(mode){const hasBul=!!window.__pageBullets;const hasDet=!!window.__pageDetailed;const hasChap=!!window.__pageChapter;let md;if(mode==='bullets'&&hasBul)md=window.__pageBullets;else if(mode==='detailed'&&hasDet)md=window.__pageDetailed;else if(mode==='chapter'&&hasChap)md=window.__pageChapter;else{mode='full';md=window.__pageFull;}$('#sumBody').innerHTML=mdToHtml(md);$('#pgFull').classList.toggle('on',mode==='full');$('#pgBul').classList.toggle('on',mode==='bullets');$('#pgDet').classList.toggle('on',mode==='detailed');$('#pgChap').classList.toggle('on',mode==='chapter');$('#pgDet').style.display=hasDet?'inline-block':'none';$('#pgChap').style.display=hasChap?'inline-block':'none';$('#pgBul').style.display=hasBul?'inline-block':'none';$('#pageToggle').style.display=(hasBul||hasDet||hasChap)?'inline-flex':'none';}
 function groupSegments(segs){
   // group consecutive caption lines into readable paragraphs (~280 chars or 5 lines)
   const groups=[];let cur=null;
   for(const s of segs){
-    if(!cur){cur={ts:s.ts,text:s.text,n:1};continue;}
-    if(cur.text.length>280||cur.n>=5){groups.push(cur);cur={ts:s.ts,text:s.text,n:1};}
+    if(!cur){cur={ts:s.ts,t:s.t,text:s.text,n:1};continue;}
+    if(cur.text.length>280||cur.n>=5){groups.push(cur);cur={ts:s.ts,t:s.t,text:s.text,n:1};}
     else{cur.text+=' '+s.text;cur.n++;}
   }
   if(cur)groups.push(cur);
@@ -694,9 +702,9 @@ function openReader(s){
   const tl=$('#transcriptScroll');
   let thumb='';
   if(s.video_id){thumb=`<a class="vthumb" href="https://www.youtube.com/watch?v=${encodeURIComponent(s.video_id)}" target="_blank" rel="noopener"><img src="https://img.youtube.com/vi/${encodeURIComponent(s.video_id)}/mqdefault.jpg" alt="video thumbnail" loading="lazy"><span class="vplay">▶</span></a>`;}
-  tl.innerHTML=thumb+groups.map(g=>`<div class="tline"><span class="tt">${esc(g.ts)}</span><span class="tx">${esc(g.text)}</span></div>`).join('');
+  tl.innerHTML=thumb+groups.map(g=>`<div class="tline" data-t="${g.t!=null?g.t:''}"><span class="tt">${esc(g.ts)}</span><span class="tx">${esc(g.text)}</span></div>`).join('');
   // summary pane with Detailed/Normal/Bullets toggle
-  window.__sumFull=s.summary_md||'';window.__sumBullets=s.bullets_md||'';window.__sumDetailed=s.detailed_md||'';
+  window.__sumFull=s.summary_md||'';window.__sumBullets=s.bullets_md||'';window.__sumDetailed=s.detailed_md||'';window.__sumChapter=s.chapter_md||'';
   renderSummaryPane('full');
   // interactive Q&A box for the video
   const ra=$('#readerAsk');ra.innerHTML=askBoxHTML('Have questions about this video? Ask here:');
@@ -729,21 +737,89 @@ function wireAskResize(){
   handle.addEventListener('dblclick',()=>{pane.style.height=MIN+'px';});
 }
 function renderSummaryPane(mode){
-  const hasBul=!!window.__sumBullets;const hasDet=!!window.__sumDetailed;
+  const hasBul=!!window.__sumBullets;const hasDet=!!window.__sumDetailed;const hasChap=!!window.__sumChapter;
   let md;
   if(mode==='bullets'&&hasBul)md=window.__sumBullets;
   else if(mode==='detailed'&&hasDet)md=window.__sumDetailed;
+  else if(mode==='chapter'&&hasChap)md=window.__sumChapter;
   else{mode='full';md=window.__sumFull;}
   $('#summaryScroll').innerHTML=mdToHtml(md);
   $('#tgFull').classList.toggle('on',mode==='full');
   $('#tgBul').classList.toggle('on',mode==='bullets');
   $('#tgDet').classList.toggle('on',mode==='detailed');
+  $('#tgChap').classList.toggle('on',mode==='chapter');
   $('#tgDet').style.display=hasDet?'inline-block':'none';
+  $('#tgChap').style.display=hasChap?'inline-block':'none';
   $('#tgBul').style.display=hasBul?'inline-block':'none';
-  $('#summaryToggle').style.display=(hasBul||hasDet)?'inline-flex':'none';
+  $('#summaryToggle').style.display=(hasBul||hasDet||hasChap)?'inline-flex':'none';
 }
 function closeReader(){$('#sumReader').style.display='none';document.body.style.overflow='';}
-// ── Q&A box: builds an interactive ask box into a container ──
+// Turn [n] markers in an answer into clickable citation chips.
+// YouTube citations (with a timestamp) jump the transcript to that moment;
+// document citations reveal the source snippet.
+function applyCitations(aaEl, citations){
+  if(!citations||!citations.length){
+    // still strip any stray [n] the model may have added with no source
+    aaEl.innerHTML=aaEl.innerHTML.replace(/\[(\d+)\]/g,'');
+    return;
+  }
+  const byN={}; citations.forEach(c=>{byN[c.n]=c;});
+  // Walk text nodes and replace [n] with chip spans (avoids clobbering HTML tags)
+  const walker=document.createTreeWalker(aaEl, NodeFilter.SHOW_TEXT, null);
+  const edits=[];
+  let node;
+  while((node=walker.nextNode())){
+    if(/\[\d+\]/.test(node.nodeValue)) edits.push(node);
+  }
+  for(const tn of edits){
+    const frag=document.createDocumentFragment();
+    let last=0; const s=tn.nodeValue; const rx=/\[(\d+)\]/g; let m;
+    while((m=rx.exec(s))){
+      const n=parseInt(m[1],10); const c=byN[n];
+      if(m.index>last) frag.appendChild(document.createTextNode(s.slice(last,m.index)));
+      if(c){
+        const chip=document.createElement(c.ts?'a':'span');
+        chip.className='cite'+(c.ts?'':' nolink');
+        chip.textContent=n;
+        if(c.ts){
+          chip.href='#'; chip.title='Jump to '+c.ts+' in the transcript';
+          chip.onclick=(e)=>{e.preventDefault();jumpToTime(c.t,c.ts);};
+        }else{
+          chip.title=c.snippet||'Source excerpt';
+        }
+        frag.appendChild(chip);
+      }
+      // if no matching citation, drop the marker entirely
+      last=m.index+m[0].length;
+    }
+    if(last<s.length) frag.appendChild(document.createTextNode(s.slice(last)));
+    tn.parentNode.replaceChild(frag,tn);
+  }
+  // For document (non-timestamp) sources, add a small "Sources" footnote list.
+  const docCites=citations.filter(c=>!c.ts);
+  if(docCites.length){
+    const note=document.createElement('div');note.className='citenote';
+    note.innerHTML='<strong>Sources</strong>'+docCites.map(c=>
+      `<span class="cs">[${c.n}] ${esc(c.snippet||'')}…</span>`).join('');
+    aaEl.appendChild(note);
+  }
+}
+// Scroll the transcript to a given time (seconds) and briefly highlight it.
+function jumpToTime(tSeconds, ts){
+  const tl=document.getElementById('transcriptScroll');
+  if(!tl)return;
+  const lines=[...tl.querySelectorAll('.tline[data-t]')];
+  if(!lines.length)return;
+  // find the last line whose start time is <= the citation time
+  let target=lines[0];
+  for(const ln of lines){
+    const t=parseFloat(ln.getAttribute('data-t'));
+    if(!isNaN(t) && t<=tSeconds+0.01) target=ln; else break;
+  }
+  target.scrollIntoView({behavior:'smooth',block:'center'});
+  target.classList.add('cited');
+  setTimeout(()=>target.classList.remove('cited'),1600);
+}
 function askBoxHTML(label){return `<div class="askbox"><div class="askhead">${esc(label)}</div><div class="asksub">Answers read the full source text. Tip: put a word in "quotes" to count it exactly.</div><div class="askrow"><textarea placeholder="Type your question…" rows="1"></textarea><button class="askbtn">Ask</button></div><div class="askthread"></div></div>`;}
 function wireAsk(container, scope, providerGetter){
   if(!container)return;
@@ -758,7 +834,13 @@ function wireAsk(container, scope, providerGetter){
       const cfg=providerGetter();cfg.scope=scope;cfg.question=q;
       const r=await(await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)})).json();
       qa.querySelector('.aa').className='aa';
-      qa.querySelector('.aa').innerHTML=r.ok?mdToHtml(r.answer||''):`<span style="color:var(--bad,#e88)">${esc(r.message||'Could not answer.')}</span>`;
+      const aaEl=qa.querySelector('.aa');
+      if(r.ok){
+        aaEl.innerHTML=mdToHtml(r.answer||'');
+        applyCitations(aaEl, r.citations||[]);
+      }else{
+        aaEl.innerHTML=`<span style="color:var(--bad,#e88)">${esc(r.message||'Could not answer.')}</span>`;
+      }
       // In the YouTube/reader view the ask pane starts short (just the box). Once
       // there's an answer to read, grow it so the response is visible without the
       // user having to drag the divider - but only if they haven't enlarged it.
@@ -924,10 +1006,10 @@ async function restoreSummary(sid){
   if(!r.ok)return;
   const p=r.payload||{};
   if(p.is_youtube&&p.segments&&p.segments.length){
-    openReader({title:p.title,source_label:p.source_label,is_youtube:true,video_id:p.video_id,segments:p.segments,summary_md:p.summary_md,bullets_md:p.bullets_md,detailed_md:p.detailed_md});
+    openReader({title:p.title,source_label:p.source_label,is_youtube:true,video_id:p.video_id,segments:p.segments,summary_md:p.summary_md,bullets_md:p.bullets_md,detailed_md:p.detailed_md,chapter_md:p.chapter_md});
   }else{
     $('#sumWrap').style.display='block';
-    window.__pageFull=p.summary_md||'';window.__pageBullets=p.bullets_md||'';window.__pageDetailed=p.detailed_md||'';
+    window.__pageFull=p.summary_md||'';window.__pageBullets=p.bullets_md||'';window.__pageDetailed=p.detailed_md||'';window.__pageChapter=p.chapter_md||'';
     renderPageSummary('full');
     $('#sumSrcLabel').textContent=p.source_label||p.title||'';
     const pa=$('#pageAsk');pa.innerHTML=askBoxHTML('Have questions about this? Ask here:');

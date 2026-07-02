@@ -452,6 +452,22 @@ def _limits_for(provider):
     """Return (single_limit, chunk_size) tuned to the provider."""
     return SUMMARY_SINGLE_LIMIT, CHUNK_SIZE
 
+_TABLE_RULE = (
+    "Use a Markdown table ONLY when it earns its place: every cell must carry a "
+    "genuinely informative amount of detail (a full, specific phrase or sentence), "
+    "and the table must have at least three rows. A table is right for things like "
+    "case examples with a real description and a real outcome, or methods with a "
+    "substantive explanation of each. If any cell would be just one or two words, a "
+    "bare label, or a vague fragment like 'Functional' or 'Critical', do NOT use a "
+    "table - write it as bullet points with a bold lead-in and a real explanation "
+    "instead. A thin, terse table is worse than a good bulleted list; prefer prose "
+    "or bullets whenever the per-cell detail would be sparse. When you do use a "
+    "table, format it as proper GitHub Markdown: a header row, then a separator row "
+    "of dashes, then data rows, with NO blank lines between any of them "
+    "(| A | B |, then | --- | --- |, then rows), and make each cell specific and "
+    "substantive."
+)
+
 _NO_STYLE = (
     " Use plain hyphens or commas, never em dashes or en dashes. Do not offer "
     "follow-up help, suggestions, or meta-commentary about the summary itself; "
@@ -471,14 +487,9 @@ SUMMARY_SYSTEM = (
     "'Key Points'. Under each sub-headline, prefer:\n"
     "- bullet points with a **bold lead-in phrase** then a short explanation, and/"
     "or\n"
-    "- a compact Markdown table when the content compares items, lists "
-    "options/steps/types, or has any row-and-column structure (for example a "
-    "table of methods vs effectiveness, seasons vs appearance, tools vs use).\n"
-    "When you use a table, format it as proper GitHub Markdown: a header row, then "
-    "a separator row of dashes, then the data rows, with NO blank lines between any "
-    "of them. Example:\n"
-    "| Column A | Column B |\n| --- | --- |\n| value | value |\n"
-    "Use tables and bullet lists generously wherever the content supports them; "
+    "- a compact Markdown table, but only per the table rule below.\n"
+    + _TABLE_RULE + "\n"
+    "Use bullet lists generously wherever the content supports them; "
     "reserve plain paragraphs for genuinely narrative material.\n\n"
     "## Takeaway\nOne or two sentences on the core 'so what'.\n\n"
     "Be faithful to the source; never invent facts. If it is a video transcript, "
@@ -502,18 +513,56 @@ REDUCE_SUMMARY_SYSTEM = (
     "Then 4 to 7 thematic sections, each with its own '## ' sub-headline named for "
     "the actual topic (not generic labels like 'Summary' or 'Key Points'). Under "
     "each, prefer bullet points with a **bold lead-in phrase** plus a short "
-    "explanation, and use a compact Markdown table whenever the material compares "
-    "items, lists options/steps/types/examples, or has row-and-column structure "
-    "(for example: case examples with issue and outcome, methods vs effectiveness, "
-    "stages vs description). When you use a table, format it as proper GitHub "
-    "Markdown: a header row, then a separator row of dashes, then data rows, with "
-    "NO blank lines between any of them (| A | B |, then | --- | --- |, then rows). "
-    "Use tables and lists generously; reserve paragraphs "
+    "explanation, and use a compact Markdown table only per the table rule below.\n"
+    + _TABLE_RULE + "\n"
+    "Use bullet lists generously; reserve paragraphs "
     "for genuinely narrative material.\n\n"
     "## Takeaway\nOne or two sentences on the core message.\n\n"
     "Synthesize across ALL sections, not just the first. Be faithful; never invent. "
     "Keep it tight and scannable." + _NO_STYLE
 )
+
+CHAPTER_SUMMARY_SYSTEM = (
+    "You are summarizing ONE chapter of a book. Write a short, faithful summary of "
+    "just this chapter: 3 to 6 sentences (or a few tight bullets) capturing what "
+    "happens or what is argued, the key points, and anything important the reader "
+    "should take away. Do not reference other chapters or the book as a whole. Do "
+    "not invent anything not in the text. Be concise and concrete." + _NO_STYLE
+)
+
+
+def summarize_chapters(provider, chapters, progress=None):
+    """Summarize an EPUB chapter by chapter.
+
+    chapters: list of {title, text}. Returns a single Markdown document with a
+    '## <chapter title>' heading and a short summary under each. Routes each
+    chapter to the fast model (many small calls); it's the same map pattern the
+    rest of the pipeline uses.
+    """
+    if not chapters:
+        return ""
+    fast = getattr(provider, "fast", provider)
+    single_limit, _ = _limits_for(provider)
+    out = ["# Chapter-by-chapter summary\n"]
+    total = len(chapters)
+    for i, ch in enumerate(chapters):
+        if progress:
+            progress({"phase": "chapters", "chunk": i + 1, "chunks": total})
+        title = (ch.get("title") or f"Chapter {i + 1}").strip()
+        body = (ch.get("text") or "").strip()
+        if not body:
+            continue
+        # Keep each chapter within the model's comfortable single-pass window.
+        snippet = body[:single_limit]
+        try:
+            summary = _clean_summary(fast.chat(
+                CHAPTER_SUMMARY_SYSTEM,
+                f"Chapter title: {title}\n\nChapter text:\n\"\"\"\n{snippet}\n\"\"\""))
+        except Exception:
+            summary = "_(This chapter could not be summarized.)_"
+        out.append(f"## {title}\n\n{summary}\n")
+    return "\n".join(out)
+
 
 DETAILED_SUMMARY_SYSTEM = (
     "You write a THOROUGH, in-depth prose summary of a document, long article, or "
@@ -557,9 +606,74 @@ _OFFER = _re.compile(
     _re.IGNORECASE | _re.DOTALL)
 
 
+def _fix_thin_tables(md):
+    """Model-agnostic guard against useless tables.
+
+    The prompts already tell every model to avoid tables with one-or-two-word
+    cells, but weaker models don't always comply. This post-check enforces it in
+    code: any Markdown table whose data cells are mostly terse fragments gets
+    converted to a bulleted list (bold first column, remaining cells joined),
+    which reads far better than a grid of bare labels. Substantive tables pass
+    through untouched.
+    """
+    if not md or "|" not in md:
+        return md
+
+    lines = md.split("\n")
+    out = []
+    i = 0
+    sep_rx = _re.compile(r"^\s*\|?\s*:?-{3,}.*\|")
+
+    def cells_of(line):
+        parts = [c.strip() for c in line.strip().strip("|").split("|")]
+        return parts
+
+    while i < len(lines):
+        line = lines[i]
+        # A table starts with a pipe row followed by a separator row.
+        if (line.strip().startswith("|") and i + 1 < len(lines)
+                and sep_rx.match(lines[i + 1] or "")):
+            header = cells_of(line)
+            j = i + 2
+            rows = []
+            while j < len(lines) and lines[j].strip().startswith("|"):
+                rows.append(cells_of(lines[j]))
+                j += 1
+            # Measure substance: the first column is a label by nature, so it's
+            # excluded. A table is thin if many cells are bare fragments OR the
+            # average cell carries too few words to inform (like the 'Functional'
+            # / 'Detects Astrophage' grids the prompt rule targets).
+            data_cells = [c for r in rows for c in r[1:] if c is not None]
+            nonempty = [c for c in data_cells if c]
+            thin = [c for c in nonempty if len(c.split()) <= 2]
+            avg_words = (sum(len(c.split()) for c in nonempty) / len(nonempty)) if nonempty else 0
+            is_thin = (not nonempty) or (len(thin) / len(nonempty) >= 0.4) or (avg_words <= 4.0)
+            if is_thin and rows:
+                # Convert: "- **First cell**: other cells joined with '; '"
+                for r in rows:
+                    label = r[0] if r else ""
+                    rest = [c for c in r[1:] if c]
+                    if label and rest:
+                        out.append(f"- **{label}**: " + "; ".join(rest))
+                    elif label:
+                        out.append(f"- **{label}**")
+                    elif rest:
+                        out.append("- " + "; ".join(rest))
+                i = j
+                continue
+            # Substantive table: keep as-is.
+            out.extend(lines[i:j])
+            i = j
+            continue
+        out.append(line)
+        i += 1
+    return "\n".join(out)
+
+
 def _clean_summary(md):
     """Strip model-invented citation links, em dashes, and trailing offers of
-    further help so the summary ends cleanly on its content."""
+    further help so the summary ends cleanly on its content. Also converts
+    thin, uninformative tables into bullets (see _fix_thin_tables)."""
     if not md:
         return md
     md = _CA_LINK.sub(r"\1", md)
@@ -568,6 +682,7 @@ def _clean_summary(md):
     md = md.replace("\u2014", ", ").replace("\u2013", "-")  # em/en dash -> plain
     md = _re.sub(r"\s+,", ",", md)    # tidy any " ," from the swap
     md = _re.sub(r",\s{2,}", ", ", md)  # collapse ",  " -> ", "
+    md = _fix_thin_tables(md)
     return md.rstrip()
 
 
@@ -832,12 +947,19 @@ ASK_SYSTEM = (
     "You are answering a user's question about a specific source they have "
     "(a document, ebook, video transcript, web article, or a collection of their "
     "documents). You are given the most relevant excerpts from the FULL source "
-    "text (not just a summary), plus the summary for orientation. Answer using "
-    "the excerpts. Be direct, concrete, and specific - if they ask for actionable "
+    "text, each labelled with a number like [1], [2], [3]. Answer using the "
+    "excerpts. Be direct, concrete, and specific - if they ask for actionable "
     "steps or a day-to-day plan, lay out the concrete steps the source gives, even "
     "if the summary left them out. If the excerpts genuinely don't contain the "
-    "answer, say so plainly rather than guessing. Use plain hyphens, never em "
-    "dashes. Do not add links or citations."
+    "answer, say so plainly rather than guessing.\n\n"
+    "CITE YOUR SOURCES: after each sentence or claim that comes from an excerpt, "
+    "add the matching label in square brackets, like [1] or [2][3]. Only cite a "
+    "label that actually supports that claim; never invent a label that wasn't "
+    "given to you. If a sentence is your own connective phrasing and not from any "
+    "excerpt, leave it uncited. Put the citation right after the relevant "
+    "sentence, before the period is fine.\n\n"
+    "Use plain hyphens, never em dashes. Do not add any other links, URLs, or a "
+    "reference list at the end - just the inline [n] markers."
 )
 
 # crude but exact: detect counting/occurrence questions we can answer with code
@@ -881,11 +1003,24 @@ def _retrieve(question, text, max_chars):
     """Lightweight local retrieval: split the text into windows and rank them by
     overlap with the question's keywords, returning the top windows up to
     max_chars. No embeddings - keeps it dependency-free and fully local."""
+    picked = _retrieve_windows(question, text, max_chars)
+    if picked is None:
+        return text[:max_chars] if text else ""
+    return "\n...\n".join(w for _, w, _ in picked)
+
+
+def _retrieve_windows(question, text, max_chars, win=1800):
+    """Shared retrieval core. Returns a list of (order_index, window_text,
+    char_start) for the picked windows in document order, or None if the whole
+    text fits / nothing scored (caller should fall back to raw text).
+
+    char_start is the character offset of the window in the full text, which lets
+    callers map an excerpt back to a location (e.g. the nearest video timestamp).
+    """
     if not text:
-        return ""
+        return []
     if len(text) <= max_chars:
-        return text
-    # keywords from the question (drop short/stopwords)
+        return [(0, text, 0)]
     stop = set("the a an and or of to in is are was were be been being on for with "
                "what how many times does did this that these those it its as at by "
                "from i you me my your we our they them their he she his her about "
@@ -893,35 +1028,38 @@ def _retrieve(question, text, max_chars):
     qwords = [w for w in _re.findall(r"[a-z][a-z'-]{2,}", question.lower())
               if w not in stop]
     if not qwords:
-        return text[:max_chars]
+        return None
     qset = set(qwords)
-    win = 1800
-    windows = [text[i:i + win] for i in range(0, len(text), win)]
+    windows = [(i, text[i:i + win]) for i in range(0, len(text), win)]
     scored = []
-    for idx, w in enumerate(windows):
+    for start, w in windows:
         wl = w.lower()
         score = sum(wl.count(k) for k in qset)
         if score:
-            scored.append((score, idx, w))
+            scored.append((score, start, w))
     if not scored:
-        return text[:max_chars]
+        return None
     scored.sort(key=lambda t: (-t[0], t[1]))
     picked, used = [], 0
-    for score, idx, w in scored:
+    for score, start, w in scored:
         if used + len(w) > max_chars:
             continue
-        picked.append((idx, w))
+        picked.append((start, w))
         used += len(w)
         if used >= max_chars:
             break
     picked.sort(key=lambda t: t[0])  # restore document order
-    return "\n...\n".join(w for _, w in picked)
+    return [(order, w, start) for order, (start, w) in enumerate(picked)]
 
 
 def answer_question(provider, question, context, extra=None):
-    """Answer a user question grounded in the FULL raw source. Counting/occurrence
-    questions are answered exactly by code; analytical questions retrieve the most
-    relevant excerpts from the raw text and ask the model from those."""
+    """Answer a user question grounded in the FULL raw source.
+
+    Returns a dict: {"answer": <markdown with [n] markers>, "citations": [...]}.
+    Each citation is {"n": int, "snippet": str, "char_start": int} pointing at the
+    excerpt that supports claims tagged [n]. Counting questions are answered
+    exactly by code (and carry no citations).
+    """
     question = (question or "").strip()
     if not question:
         raise RuntimeError("Please type a question.")
@@ -929,20 +1067,50 @@ def answer_question(provider, question, context, extra=None):
     # 1) exact counting questions -> answer precisely from the raw text
     counted = _try_exact_count(question, context or "")
     if counted is not None:
-        return counted
+        return {"answer": counted, "citations": []}
 
-    # 2) analytical questions -> retrieve relevant excerpts, then ask the model
+    # 2) analytical questions -> retrieve relevant excerpts, label them, cite them
     single_limit, _ = _limits_for(provider)
     budget = max(1500, single_limit - len(question) - 600)
-    excerpts = _retrieve(question, context or "", budget)
+    picked = _retrieve_windows(question, context or "", budget)
+    if not picked:  # None or empty -> fall back to a plain slice, no citations
+        excerpts_text = (context or "")[:budget]
+        parts = []
+        if extra:
+            parts.append("Summary (for orientation):\n" + extra[:1500])
+        parts.append("Source excerpts:\n\"\"\"\n" + excerpts_text + "\n\"\"\"")
+        parts.append("Question: " + question)
+        synth = getattr(provider, "synth", provider)
+        ans = _clean_summary(synth.chat(ASK_SYSTEM, "\n\n".join(parts)))
+        return {"answer": ans, "citations": []}
+
+    # Build labelled excerpts [1], [2], ... and a citation map back to positions.
+    labelled = []
+    citations = []
+    for order, wtext, char_start in picked:
+        n = order + 1
+        labelled.append(f"[{n}]\n{wtext}")
+        snippet = _re.sub(r"\s+", " ", wtext).strip()
+        citations.append({
+            "n": n,
+            "snippet": snippet[:160],
+            "char_start": char_start,
+        })
+
     parts = []
     if extra:
-        parts.append("Summary (for orientation):\n" + extra[:1500])
-    parts.append("Relevant excerpts from the FULL source:\n\"\"\"\n" + excerpts + "\n\"\"\"")
+        parts.append("Summary (for orientation only, do not cite it):\n" + extra[:1200])
+    parts.append("Numbered excerpts from the FULL source (cite these by number):\n\n"
+                 + "\n\n".join(labelled))
     parts.append("Question: " + question)
-    # User-facing answer, runs once per question -> SYNTH model for quality.
     synth = getattr(provider, "synth", provider)
-    return _clean_summary(synth.chat(ASK_SYSTEM, "\n\n".join(parts)))
+    answer = _clean_summary(synth.chat(ASK_SYSTEM, "\n\n".join(parts)))
+
+    # Only keep citations the model actually used, so the UI doesn't show dangling
+    # sources. If it cited nothing (rare), return the answer without citations.
+    used = set(int(x) for x in _re.findall(r"\[(\d+)\]", answer))
+    citations = [c for c in citations if c["n"] in used]
+    return {"answer": answer, "citations": citations}
 
 
 def summary_header(meta):
