@@ -297,7 +297,7 @@
   .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
   .note{font-size:12.5px;color:var(--ink-soft);margin-top:9px}
   .pill{font-size:11px;border-radius:999px;padding:3px 9px;font-weight:600}
-  .pill.ok{background:var(--good-bg);color:var(--good-ink)}.pill.bad{background:var(--bad-bg);color:var(--bad-ink)}
+  .pill.ok{background:var(--good-bg);color:var(--good-ink)}.pill.bad{background:var(--bad-bg);color:var(--bad-ink)}.pill.warn{background:#4a3f1e;color:#e0b341}
   .drop{border:2px dashed var(--rule);border-radius:12px;padding:30px 20px;text-align:center;background:var(--panel-2);cursor:pointer;transition:.15s}
   .drop:hover,.drop.over{border-color:var(--gold);background:rgba(217,176,97,.08)}
   .drop svg{width:34px;height:34px;stroke:var(--gold);fill:none;stroke-width:1.5;margin-bottom:8px}
@@ -533,7 +533,7 @@
             <li>Rename it to exactly <code class="k">credentials.json</code> and drop it into the app’s <code class="k">credentials</code> folder:<div class="note" id="credPath" style="margin-top:6px"></div></li>
           </ol>
           <div class="note" style="margin-top:12px">Then tick <strong>Google Drive folder</strong> on the Analyze screen, paste a folder link, and run. A browser opens once to authorize <strong>read-only</strong> access (you’ll see an “unverified app” notice, click <strong>Advanced, then Go to Sonario</strong>; that’s normal for your own app). The token is cached locally and reused.</div>
-          <div class="actions" style="margin-top:14px"><span class="pill" id="credPill">checking…</span><button class="btn ghost small" id="recheck">Re-check</button></div>
+          <div class="actions" style="margin-top:14px"><span class="pill" id="credPill">checking…</span><button class="btn ghost small" id="recheck">Re-check</button><button class="btn ghost small" id="gdriveConnect">Sign in / Reconnect</button><span id="gdriveConnectOut"></span></div>
         </div>
       </div>
     </section>
@@ -645,8 +645,14 @@ $('#useFolder').onchange=syncSrc;
 $('#useGdrive').onchange=syncSrc;
 function updateWarn(){const p=PROVIDERS[$('#provider').value]||{};$('#driveCloudWarn').style.display=($('#useGdrive').checked&&p.needs_key)?'block':'none';}
 $('#testBtn').onclick=async()=>{const out=$('#testOut');out.innerHTML='<span class="note">testing…</span>';try{const r=await(await fetch('/api/test_provider',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(providerCfg())})).json();out.innerHTML=r.ok?'<span class="pill ok">connected</span>':`<span class="pill bad">failed</span> <span class="note">${esc(r.message||'')}</span>`;}catch(e){out.innerHTML='<span class="pill bad">error</span>';}};
-async function gdriveStatus(){try{const r=await(await fetch('/api/gdrive_status')).json();$('#credPath').innerHTML=r.creds_dir?`<code class="k">${esc(r.creds_dir)}</code>`:'';const pill=$('#credPill'),note=$('#gdriveNote');if(r.credentials_present){pill.className='pill ok';pill.textContent='credentials.json found';note.innerHTML='<span class="pill ok">ready</span> Paste a folder link and analyze.';}else{pill.className='pill bad';pill.textContent='credentials.json missing';note.innerHTML='Not connected yet, see <strong>Google Drive setup</strong>.';}}catch(e){}}
+async function gdriveStatus(){try{const r=await(await fetch('/api/gdrive_status')).json();$('#credPath').innerHTML=r.creds_dir?`<code class="k">${esc(r.creds_dir)}</code>`:'';const pill=$('#credPill'),note=$('#gdriveNote');const st=r.state||(r.credentials_present?'not_signed_in':'no_credentials');
+  if(st==='ready'){pill.className='pill ok';pill.textContent='connected';note.innerHTML='<span class="pill ok">ready</span> Paste a folder link and analyze.';}
+  else if(st==='expired'){pill.className='pill bad';pill.textContent='sign-in expired';note.innerHTML='<span class="pill bad">expired</span> '+esc(r.status_message||'Re-authorize on the Google Drive setup tab.')+' See <strong>Google Drive setup</strong>.';}
+  else if(st==='not_signed_in'){pill.className='pill warn';pill.textContent='credentials found, not signed in';note.innerHTML='<span class="pill warn">sign in needed</span> Run gdrive_setup.bat or the Google Drive setup tab.';}
+  else{pill.className='pill bad';pill.textContent='credentials.json missing';note.innerHTML='Not connected yet, see <strong>Google Drive setup</strong>.';}
+}catch(e){}}
 $('#recheck').onclick=gdriveStatus;
+$('#gdriveConnect').onclick=async()=>{const out=$('#gdriveConnectOut');out.innerHTML='<span class="note">a browser window will open to authorize… approve it, then come back</span>';try{const r=await(await fetch('/api/gdrive_connect',{method:'POST'})).json();out.innerHTML=r.ok?'<span class="pill ok">connected</span>':`<span class="pill bad">failed</span> <span class="note">${esc(r.message||'')}</span>`;gdriveStatus();}catch(e){out.innerHTML='<span class="pill bad">error</span>';}};
 $('#startBtn').onclick=async()=>{const cfg=providerCfg();cfg.use_folder=$('#useFolder').checked;cfg.use_gdrive=$('#useGdrive').checked;cfg.folder_path=$('#folderPath').value;cfg.gdrive_link=$('#gdriveLink').value;cfg.mode=$('#mode').value;if(!cfg.use_folder&&!cfg.use_gdrive){alert('Select at least one source: Windows folder, Google Drive, or both.');return;}if(cfg.use_folder&&!cfg.folder_path.trim()){alert('Enter a Windows folder path (or uncheck Windows folder).');return;}if(cfg.use_gdrive&&!cfg.gdrive_link.trim()){alert('Paste a Drive folder link (or uncheck Google Drive).');return;}const r=await(await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)})).json();if(!r.ok){alert(r.message||'Could not start.');return;}$('#reportReady').style.display='none';$('#progressCard').style.display='block';$('#startBtn').disabled=true;$('#stopBtn').style.display='inline-block';$('#progressCard').scrollIntoView({behavior:'smooth'});startPolling();};
 $('#stopBtn').onclick=async()=>{await fetch('/api/stop',{method:'POST'});};
 const STAGES=['classifying','extracting','mapping','reducing','synthesizing','prompting','done'];
@@ -925,8 +931,19 @@ function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 (function(){
   const mark=document.querySelector('.hero-mark');
   if(!mark)return;
-  let active=false;
-  mark.addEventListener('click',()=>{
+  let active=false, lastClick=0;
+  const ping=mark.querySelector('.ping');
+  mark.addEventListener('click',(e)=>{
+    // Guard against double-fired click events (some browsers/trackpads emit two
+    // clicks in quick succession).
+    const now=Date.now();
+    if(now-lastClick<400)return;
+    lastClick=now;
+    // The logo has an ambient "ping" pulse that loops on its own every 3s. If it
+    // happens to fire right after a click it looks like a second, fainter blip.
+    // Suppress it briefly so a click shows ONLY the click's own flash, then let
+    // it resume.
+    if(ping){ping.style.animation='none';setTimeout(()=>{ping.style.animation='';},1400);}
     // subtle flash on every click
     mark.classList.remove('flash');void mark.offsetWidth;mark.classList.add('flash');
     setTimeout(()=>mark.classList.remove('flash'),520);

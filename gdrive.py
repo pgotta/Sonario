@@ -51,11 +51,58 @@ def credentials_present():
     return os.path.exists(CREDENTIALS_FILE)
 
 
+def token_present():
+    return os.path.exists(TOKEN_FILE)
+
+
+def connection_status():
+    """Report the *real* Google Drive status without popping a browser window.
+
+    Returns a dict: {state, message}. state is one of:
+      - 'no_credentials' : credentials.json missing (setup not started)
+      - 'not_signed_in'  : credentials present but no token yet
+      - 'expired'        : token exists but is expired/revoked - needs re-auth
+      - 'ready'          : token valid (or refreshable) - good to go
+
+    This is what the UI badge should reflect, so it doesn't say "ready" when the
+    token is actually dead.
+    """
+    if not credentials_present():
+        return {"state": "no_credentials",
+                "message": "Add credentials.json (see the setup guide)."}
+    if not token_present():
+        return {"state": "not_signed_in",
+                "message": "Not signed in yet. Run gdrive_setup.bat or click Sign in."}
+    try:
+        from google.oauth2.credentials import Credentials
+        from google.auth.transport.requests import Request
+        from google.auth.exceptions import RefreshError
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+        if creds and creds.valid:
+            return {"state": "ready", "message": "Connected."}
+        if creds and creds.expired and creds.refresh_token:
+            # Try a real refresh so the badge reflects reality. If Google has
+            # revoked/expired the refresh token, this is where we learn it.
+            try:
+                creds.refresh(Request())
+                with open(TOKEN_FILE, "w") as f:
+                    f.write(creds.to_json())
+                return {"state": "ready", "message": "Connected."}
+            except RefreshError:
+                return {"state": "expired",
+                        "message": "Sign-in expired - re-authorize to reconnect."}
+        return {"state": "expired",
+                "message": "Sign-in expired - re-authorize to reconnect."}
+    except Exception as e:
+        return {"state": "expired", "message": f"Sign-in problem: {str(e)[:80]}"}
+
+
 def get_service():
     """Build an authorized Drive service, running the OAuth flow if needed."""
     from google.oauth2.credentials import Credentials
     from google_auth_oauthlib.flow import InstalledAppFlow
     from google.auth.transport.requests import Request
+    from google.auth.exceptions import RefreshError
     from googleapiclient.discovery import build
 
     if not credentials_present():
@@ -67,15 +114,43 @@ def get_service():
     creds = None
     if os.path.exists(TOKEN_FILE):
         creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+
     if not creds or not creds.valid:
+        refreshed = False
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+                refreshed = True
+            except RefreshError:
+                # The saved token is expired or was revoked by Google (this is
+                # common: apps in "Testing" status have refresh tokens that expire
+                # after 7 days). The token is dead - delete it and re-authorize.
+                creds = None
+                try:
+                    os.remove(TOKEN_FILE)
+                except OSError:
+                    pass
+        if not refreshed and (not creds or not creds.valid):
+            if not _interactive_ok():
+                raise RuntimeError(
+                    "Google Drive sign-in expired. Re-authorize by running "
+                    "gdrive_setup.bat (or clicking Test connection on the Google "
+                    "Drive setup tab), then try again. Note: while the app is in "
+                    "Google's 'Testing' status, sign-in expires every 7 days - see "
+                    "BUILD.md for how to make it last longer."
+                )
             flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
             creds = flow.run_local_server(port=0)
         with open(TOKEN_FILE, "w") as f:
             f.write(creds.to_json())
     return build("drive", "v3", credentials=creds)
+
+
+def _interactive_ok():
+    """Whether it's safe to pop a browser OAuth window now. During a running
+    analysis job we don't want to silently block on a browser prompt - better to
+    return a clear message telling the user to re-auth deliberately."""
+    return os.environ.get("SONARIO_ALLOW_OAUTH", "") == "1"
 
 
 def _list_children(service, folder_id):

@@ -378,10 +378,34 @@ def api_modes():
 def gdrive_status():
     try:
         import gdrive
+        status = gdrive.connection_status()
         return jsonify({"credentials_present": gdrive.credentials_present(),
-                        "creds_dir": gdrive.CREDS_DIR})
+                        "creds_dir": gdrive.CREDS_DIR,
+                        "state": status["state"],
+                        "status_message": status["message"]})
     except Exception as e:
-        return jsonify({"credentials_present": False, "error": str(e)})
+        return jsonify({"credentials_present": False, "state": "error",
+                        "error": str(e)})
+
+
+@app.route("/api/gdrive_connect", methods=["POST"])
+def gdrive_connect():
+    """Run/redo the Google Drive authorization. Opens the system browser to the
+    Google consent screen (deliberate user action), so we allow the OAuth flow
+    here. Used for first sign-in and for re-authorizing after a token expires."""
+    try:
+        import gdrive
+        if not gdrive.credentials_present():
+            return jsonify({"ok": False,
+                            "message": "Add credentials.json first (see the setup guide)."})
+        os.environ["SONARIO_ALLOW_OAUTH"] = "1"
+        try:
+            gdrive.get_service()  # opens browser if needed, saves fresh token.json
+        finally:
+            os.environ["SONARIO_ALLOW_OAUTH"] = ""
+        return jsonify({"ok": True, "message": "Connected to Google Drive."})
+    except Exception as e:
+        return jsonify({"ok": False, "message": str(e)[:200]})
 
 
 @app.route("/api/test_provider", methods=["POST"])

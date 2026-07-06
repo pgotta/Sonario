@@ -156,6 +156,50 @@ you can follow along with it instead of the links below.
    own personal app. It is "unverified" only because you have not submitted it to
    Google for public review, which a personal tool does not need.
 
+### If Google Drive says "sign-in expired" (token expired or revoked)
+
+Google Drive sign-ins do not last forever - this is Google's policy, not a
+Sonario limitation. If you see **"sign-in expired"** on the badge, or an
+`invalid_grant: Token has been expired or revoked` error, your saved sign-in
+(`credentials/token.json`) is no longer valid. Here is why it happens and how to
+make it last as long as possible.
+
+**Why it expires:**
+
+- **The big one - "Testing" status expires every 7 days.** While your app's
+  publishing status is **Testing** (the default from step 4 above), Google expires
+  its refresh tokens after **7 days**. So you will have to re-authorize about once
+  a week. This is the most common cause.
+- Other triggers: you changed your Google password, you revoked the app's access
+  in your Google account, or the token went unused for ~6 months.
+
+**How to re-authorize (takes ~15 seconds):**
+
+Just run **`gdrive_setup.bat`** again, or tick **Google Drive folder** and paste a
+link - Sonario detects the dead token, deletes it, and reopens the browser
+authorize screen. Approve it and you are reconnected. (You do **not** need a new
+`credentials.json` - the same one keeps working; only the per-session `token.json`
+refreshes.)
+
+**How to make it last far longer (stop the weekly expiry):**
+
+Move your app from **Testing** to **In production**:
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), open **APIs &
+   Services, then OAuth consent screen** (the **Audience** page).
+2. Under **Publishing status**, click **Publish app** and confirm.
+
+Once published, refresh tokens no longer expire on the 7-day timer, so a single
+sign-in lasts effectively until you change your password or revoke it. You will
+still see the "unverified app" notice when signing in (click **Advanced, then Go
+to Sonario**) - that is fine, because as a personal Desktop-app client you do
+**not** need to complete Google's verification review. Publishing here just stops
+the test-mode token expiry; it does not make your app public or send it to Google
+for review, since Desktop-app credentials are tied to your own account.
+
+> If you would rather not publish, that is fine too - just expect to re-run
+> `gdrive_setup.bat` about once a week. Both options are safe.
+
 ### Do not lose `credentials.json` when updating
 
 Google only lets you download `credentials.json` once. The Sonario download never
@@ -620,9 +664,12 @@ pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib >
 
 echo.
 echo   Running a connection test. A browser may open to authorize READ-ONLY
-echo   access the first time - approve it, then return here.
+echo   access (or to re-authorize if your previous sign-in expired) - approve
+echo   it, then return here.
 echo.
+set "SONARIO_ALLOW_OAUTH=1"
 python -c "import gdrive,sys; svc=gdrive.get_service(); print('  [OK] Connected to Google Drive successfully.')" || echo   [X] Connection test failed - see the message above.
+set "SONARIO_ALLOW_OAUTH="
 echo.
 echo   Done. In Sonario, tick "Google Drive folder" and paste a folder link.
 echo.
