@@ -1,7 +1,7 @@
 """
 providers.py — one OpenAI-compatible interface for every LLM backend.
 
-Because Ollama, OpenAI and Gemini (compat endpoint) all speak the OpenAI
+Because Ollama and Groq (OpenAI-compatible endpoint) both speak the OpenAI
 /v1/chat/completions shape, a single client works for all. Switching provider =
 swapping base_url + model + key. No forked code.
 
@@ -56,23 +56,14 @@ PROVIDERS = {
         "tip": "Advanced: type the name of any model you've pulled with Ollama (e.g. qwen3:14b, llama3.1) in the Model box.",
         "note": "Free & fully private. Requires Ollama installed and a pulled model. Type any pulled model name in the Model box.",
     },
-    "openai": {
-        "label": "OpenAI (API key)",
-        "base_url": "https://api.openai.com/v1",
-        "model": "gpt-4o-mini",
+    "groq": {
+        "label": "Groq - Llama 4 Scout (cloud, free key)",
+        "base_url": "https://api.groq.com/openai/v1",
+        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
         "needs_key": True,
         "min_interval": 0.0,
-        "tip": "Cloud, paid. Fast and high quality, runs on OpenAI's servers (your text is sent to them). Needs an API key.",
-        "note": "Paste an OpenAI API key. ~cents to a couple dollars for 200 docs.",
-    },
-    "gemini": {
-        "label": "Google Gemini (API key)",
-        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
-        "model": "gemini-2.0-flash",
-        "needs_key": True,
-        "min_interval": 1.0,
-        "tip": "Cloud. Has a free tier (rate-limited) plus paid. Runs on Google's servers (your text is sent to them). Needs an API key.",
-        "note": "Free tier available (rate-limited). Uses Gemini's OpenAI-compatible endpoint.",
+        "tip": "Cloud, very fast. Summarizes big documents in one pass with Llama 4 Scout (128k context). Free API key from console.groq.com - no credit card. Your text is sent to Groq's servers.",
+        "note": "Fast cloud engine, same as the Sonario mobile app. Get a free API key at console.groq.com (no credit card), paste it above. Handles long videos and books in one pass. Your text is sent to Groq.",
     },
 }
 

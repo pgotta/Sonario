@@ -1,5 +1,4 @@
 <div align="center">
-
   <img src="docs/screenshot-hero.png" alt="Sonario home screen: the radar logo with Analyze Collection and Summarizer tabs" width="92%">
 </div>
 
@@ -19,8 +18,8 @@ It runs as a small, **local-first** web app at `http://127.0.0.1:5005`. You brin
 your own AI provider; the default, **Qwen3 8B**, runs fully on your own machine via
 [Ollama](https://ollama.com) — no account, no API key, and nothing leaves your
 computer. It's recommended for a typical gaming laptop (8GB GPU). If you'd rather
-use a cloud model, OpenAI and Gemini are one dropdown click away (bring your own
-key).
+use a fast cloud model, Groq (Llama 4 Scout) is one dropdown click away — the same
+free engine as the Sonario mobile app (bring your own free key).
 
 <div align="center">
   <img src="docs/screenshot-youtube-reader.png" alt="Sonario's two-pane YouTube summary reader: timestamped transcript on the left, summary on the right" width="90%">
@@ -51,12 +50,11 @@ key).
    `setup.bat`).
 2. Set up the default local model: double-click **`ollama_setup.bat`** (it installs
    [Ollama](https://ollama.com) if needed and pulls the models, once). This runs
-   fully on your machine with nothing sent to any provider. *Prefer a cloud model?*
-   Pick OpenAI or Gemini from the dropdown and paste your API key.
+fully on your machine with nothing sent to any provider. *Prefer a fast cloud model?*
+Pick Groq from the dropdown and paste your free API key (console.groq.com).
 3. Double-click **`run.bat`** to start the app, then open
    `http://127.0.0.1:5005` if it does not open by itself.
 4. Use the top tabs to switch between **Analyze Collection** and **Summarizer**.
-
 Both screens show results on screen with **Download .md / .pdf**.
 
 > **Want to try Analyze right away?** The download includes a `Sample Documents`
@@ -110,7 +108,7 @@ left out, and counting questions (put a word in "quotes") are answered exactly.
 4. **Reduce.** A pure-Python aggregation finds what *repeats* across documents.
 5. **Synthesize.** Writes the page-long report in the lens's structure.
 6. **Follow-ups.** A separate pass turns what recurs into the lens's follow-up
-   section.
+section.
 
 The "what repeats" insight comes from step 4 counting across all your documents,
 not from a single AI guess. Switching lens re-runs the map with different framing,
@@ -144,14 +142,15 @@ the video. You can drag the divider to resize the panes.
 There is no hard length limit. Long sources are split into sections, each is
 summarized, and the section summaries are folded down (repeatedly if needed) until
 a one-page summary fits. It will not crash on a 500-page book or a 2-hour video.
+
 Two honest caveats:
 
 - **Time locally.** On a typical 8GB gaming laptop, a 1-hour video is a few
-  minutes, a short book a few minutes, a 500-page book longer (hundreds of calls).
-  Cloud providers (OpenAI / Gemini) are faster but send your text to their servers.
+minutes, a short book a few minutes, a 500-page book longer (hundreds of calls).
+The Groq cloud engine is much faster but sends your text to Groq's servers.
 - **Detail.** Folding a whole book into one page is inherently high level: you
-  get themes and arc, not chapter-by-chapter nuance. (The Summarizer's **Detailed**
-  view gives a much longer, in-depth version when you want more.)
+get themes and arc, not chapter-by-chapter nuance. (The Summarizer's **Detailed**
+view gives a much longer, in-depth version when you want more.)
 
 If a section fails mid-run (for example a transient error during a long book),
 that section is skipped and the summary still completes with a note that it may be
@@ -168,8 +167,7 @@ any provider in the dropdown for a short description of when to use it.
 | **Smart routing** | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `ollama_setup.bat` (phi4-mini + qwen3:8b) |
 | **Phi-4-mini** *(lightweight)* | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `ollama pull phi4-mini` |
 | **Ollama** *(any model)* | Free | Fully local on your machine | [Ollama](https://ollama.com) and any pulled model |
-| **OpenAI** | A few cents to ~$2 per 200 docs | Cloud | API key |
-| **Gemini** | Free tier or key | Cloud | API key |
+| **Groq — Llama 4 Scout** | Free (bring your own key) | Cloud | Free API key from console.groq.com |
 
 All speak the OpenAI-compatible format, so switching is just a dropdown. Advanced
 users can add their own in [`models.json`](#adding-providers).
@@ -189,10 +187,17 @@ users can add their own in [`models.json`](#adding-providers).
 > or CPU-only machines, or when speed matters more than depth. Lower quality on
 > long or complex sources.
 
+> **Groq — Llama 4 Scout (cloud).** The fast path, and the same engine as the
+> Sonario mobile app. Summarizes long videos and whole books in one pass (128k
+> context) in seconds, with no local GPU load. Free to use with your own API key
+> from [console.groq.com](https://console.groq.com) (no credit card). The trade-off
+> is privacy: your text is sent to Groq's servers, so use a local model for
+> anything sensitive. See BUILD.md for the one-minute key setup.
+
 > **A note on privacy.** Sonario runs locally, but where your *text* goes depends
 > on the provider. With the **local** models (Qwen3 8B, Phi-4-mini, smart routing,
 > or any Ollama model) everything stays on your machine. With a **cloud** provider
-> (OpenAI, Gemini), the text of your documents is sent to that provider to generate
+> (Groq), the text of your documents is sent to that provider to generate
 > the result. If a source is sensitive, use a local model. Sonario shows a heads-up
 > if you pair Google Drive with a cloud provider.
 
@@ -217,8 +222,8 @@ Restart and it appears in both dropdowns.
       "needs_key": false,
       "min_interval": 0.0,
       "note": "Start LM Studio's local server and load a model first."
-    }
-  }
+}
+}
 }
 ```
 
@@ -236,31 +241,31 @@ reference setup the defaults are tuned for:
 
 What this means for the providers:
 
-- **Cloud providers** (OpenAI, Gemini) don't depend on
-  your hardware at all — the work happens on their servers. Any modern PC is fine.
+- **Cloud provider** (Groq) doesn't depend on
+your hardware at all — the work happens on their servers. Any modern PC is fine.
 - **Local default (smart routing: phi4-mini + qwen3:8b)** needs ~8 GB total for the
-  two models. On the 8 GB GPU above they can't both stay resident, so Ollama swaps
-  between them as the job moves between roles — it works, but adds a short pause on
-  each swap, so long jobs aren't instant. A GPU with more VRAM (12 GB+) would hold
-  both at once and run much faster.
+two models. On the 8 GB GPU above they can't both stay resident, so Ollama swaps
+between them as the job moves between roles — it works, but adds a short pause on
+each swap, so long jobs aren't instant. A GPU with more VRAM (12 GB+) would hold
+both at once and run much faster.
 - **Want to avoid swapping?** Pick a single-model local provider (Qwen3 8B on its
-  own, or the lighter Phi-4-mini) so only one model loads — no swap pauses, at the
-  cost of either depth (Phi-4-mini) or the fast/slow split.
+own, or the lighter Phi-4-mini) so only one model loads — no swap pauses, at the
+cost of either depth (Phi-4-mini) or the fast/slow split.
 
 ## Project layout
 
 ```
-app.py          Flask server: Analyze job + Summarizer job
-providers.py    one OpenAI-compatible interface for every LLM
-extract.py      recursive walk + text extraction (incl. OCR)
-modes.py        interpretation lenses (auto/journal/work/research/general)
-sources.py      Summarizer inputs: YouTube / web page / EPUB / files
-pipeline.py     map / reduce / synthesize / prompts / summarize
-gdrive.py       Google Drive web OAuth (read-only, isolated)
-export.py       Markdown + PDF export
-models.json     add custom providers without editing code
-static/         single-file SPA + icons
-*.bat           setup and launch scripts (see BUILD.md)
+app.py Flask server: Analyze job + Summarizer job
+providers.py one OpenAI-compatible interface for every LLM
+extract.py recursive walk + text extraction (incl. OCR)
+modes.py interpretation lenses (auto/journal/work/research/general)
+sources.py Summarizer inputs: YouTube / web page / EPUB / files
+pipeline.py map / reduce / synthesize / prompts / summarize
+gdrive.py Google Drive web OAuth (read-only, isolated)
+export.py Markdown + PDF export
+models.json add custom providers without editing code
+static/ single-file SPA + icons
+*.bat setup and launch scripts (see BUILD.md)
 ```
 
 ## Notes
@@ -273,6 +278,6 @@ static/         single-file SPA + icons
 
 MIT &copy; pgotta. See [LICENSE](LICENSE).
 
-Local models run through [Ollama](https://ollama.com) and the cloud options
-(OpenAI, Gemini) are third-party services with their own licenses and terms;
-Sonario just talks to them over the standard OpenAI-compatible API.
+Local models run through [Ollama](https://ollama.com) and the cloud option
+(Groq) is a third-party service with its own license and terms;
+Sonario just talks to it over the standard OpenAI-compatible API.

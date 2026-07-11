@@ -87,6 +87,31 @@ your reports stay clean.
 If **Test connection** says *"Ollama isn't running"*, install/start Ollama. If it
 says *"the model isn't downloaded yet"*, run the `ollama pull` commands above.
 
+## Groq cloud (optional, fast)
+
+Groq is a cloud engine that summarizes with **Llama 4 Scout** in seconds and
+handles long videos or whole books in one pass, thanks to its 128k-token context.
+It's the same engine as the Sonario mobile app. The trade-off: your text is sent
+to Groq's servers, so use a local model instead for anything sensitive.
+
+Setup (about a minute):
+
+1. Go to [console.groq.com](https://console.groq.com) and sign in (free, no credit
+   card).
+2. Open **API Keys**, click **Create API Key**, and copy it. You only see the full
+   key once, so copy it now.
+3. In Sonario, pick **Groq - Llama 4 Scout** from the provider dropdown, paste the
+   key into the **API key** box, and click **Test connection**.
+
+Notes:
+
+- The key is held only in memory for the current run - it is not written to disk.
+  You paste it each time you start the app (or keep it in your password manager).
+- Groq has a generous free tier with per-minute rate limits. Very large jobs may
+  briefly hit those limits; if so, wait a moment and retry, or use a local model.
+- The model string (`meta-llama/llama-4-scout-17b-16e-instruct`) and endpoint
+  (`https://api.groq.com/openai/v1`) are filled in for you; you only need the key.
+
 ## OCR tools (Tesseract and Poppler)
 
 `setup.bat` installs these for you so Sonario can read scanned PDFs and images. If
