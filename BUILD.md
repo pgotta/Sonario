@@ -9,18 +9,18 @@ it day to day, see [README.md](README.md).
 - **Windows 10 or 11**
 - **Python 3.10 or newer** (tick *Add Python to PATH* during install)
 
-Everything else (Git, OCR tools) is installed for you by `setup.bat`.
+Everything else (Git, OCR tools, Ollama) is installed for you by `setup_all.bat`.
 
 ## Install (one time)
 
 1. Install **Python 3.10+** from [python.org](https://www.python.org/downloads/),
    making sure **Add Python to PATH** is checked.
-2. Double-click **`setup.bat`**. It elevates once (one UAC prompt), creates a
+2. Double-click **`setup_all.bat`**. It creates a
    virtual environment, installs the Python packages, and installs **Git**,
    **Tesseract** (OCR), and **Poppler** (for scanned PDFs) via `winget`.
 3. When it finishes, you are ready to run the app.
 
-`setup.bat` is a one-time step. After that you only ever run `run.bat`.
+`setup_all.bat` is a one-time step (safe to re-run; it skips anything already done). After that you only ever run `run.bat`.
 
 ## Run
 
@@ -32,9 +32,8 @@ to use Sonario.
 
 | Script | When to run it | What it does |
 |---|---|---|
-| **`setup.bat`** | Once, first | Installs Python deps, Git, Tesseract, Poppler |
+| **`setup_all.bat`** | Once, first (safe to re-run) | Everything: finds Python (fixes PATH if needed), creates the venv, installs Python deps + Git + Tesseract + Poppler, installs Ollama, pulls the local models (qwen3:8b + phi4-mini) |
 | **`run.bat`** | Every time | Starts the app at `http://127.0.0.1:5005` |
-| **`ollama_setup.bat`** | Once, for the local models | Installs Ollama if needed and pulls the local models (qwen3:8b + phi4-mini) |
 | **`gdrive_setup.bat`** | Only for Google Drive | Opens the Google Cloud pages, verifies `credentials.json`, tests the connection |
 
 All `.bat` files use Windows (CRLF) line endings and pause on exit so you can read
@@ -52,7 +51,7 @@ Sonario's default provider runs entirely on your own machine through
 [Ollama](https://ollama.com) — no account, nothing leaves your computer, and it
 can't be rate-limited or suspended.
 
-**The easy setup:** double-click **`ollama_setup.bat`** — it installs Ollama if
+**The easy setup:** double-click **`setup_all.bat`** — it installs Ollama if
 needed, then pulls the local models. **Or do it by hand:**
 
 1. Install **Ollama** from [ollama.com](https://ollama.com). It runs as a
@@ -114,7 +113,7 @@ Notes:
 
 ## OCR tools (Tesseract and Poppler)
 
-`setup.bat` installs these for you so Sonario can read scanned PDFs and images. If
+`setup_all.bat` installs these for you so Sonario can read scanned PDFs and images. If
 you ever need to install them manually:
 
 - **Tesseract:** https://github.com/UB-Mannheim/tesseract/wiki
@@ -251,9 +250,8 @@ replacing, keep your `credentials/credentials.json` and `credentials/token.json`
 ## Project layout
 
 ```
-setup.bat           run once: installs Python deps + Git + Tesseract + Poppler
+setup_all.bat       run once: venv + Python deps + Git/OCR tools + Ollama + models
 run.bat             start the app (run this every time)
-ollama_setup.bat    install Ollama + pull the local models (qwen3:8b, phi4-mini)
 gdrive_setup.bat    Google Drive setup helper (opens pages, tests connection)
 app.py              Flask server: Analyze job + Summarizer job
 providers.py        one OpenAI-compatible interface for every LLM
@@ -271,160 +269,261 @@ static/             single-file SPA + icons
 Recreate any missing launcher by pasting the matching block into a file of the
 same name in the project root, saved with **CRLF** line endings.
 
-### `setup.bat`
+### `setup_all.bat`
 ```bat
 @echo off
 REM ============================================================================
-REM  Sonario - SETUP (install only). Run this once.
+REM  Sonario - SETUP + INSTALL ALL (one file, run once). Idempotent: it skips
+REM  anything already done, so it's safe to re-run.
 REM
-REM  Creates the Python environment, installs requirements, and installs the
-REM  OCR tools (Tesseract + Poppler) and Git via winget. To START the app
-REM  afterwards, double-click  run.bat.
+REM  1) Finds Python (python / py launcher / common install paths). If Python is
+REM     installed but not on PATH, it ADDS it to your PATH automatically.
+REM  2) Installs Python packages from requirements.txt.
+REM  3) Installs Git, Tesseract OCR, Poppler via winget (skips ones present).
+REM  4) Installs Ollama if needed and pulls the models (qwen3:8b + phi4-mini).
+REM  5) Done -> run  run.bat  to start Sonario.
 REM
-REM  Self-elevates so the Windows admin prompt appears ONCE up front (avoids the
-REM  "0x800704c7 operation cancelled" you get when a UAC dialog hides behind the
-REM  console window mid-install).
+REM  Runs as your normal user so it sees YOUR Python. winget asks for admin on
+REM  its own when it needs it. Groq (cloud) needs no install - just a free key.
 REM ============================================================================
-cd /d "%~dp0"
-title Sonario setup
-setlocal enabledelayedexpansion
 
-REM ---- self-elevate for the winget tool installs ----
-net session >nul 2>&1
-if %errorlevel% neq 0 (
-  echo.
-  echo   Setup needs administrator rights to install OCR tools and Git.
-  echo   Please click YES on the Windows prompt that appears...
-  powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
-  exit /b
-)
+setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
 
 echo.
 echo   ====================================================================
-echo    Sonario setup
+echo    Sonario - setup and install (safe to re-run; skips finished steps)
 echo   ====================================================================
 echo.
 
-REM ---- 1. Python ----
+REM =====================  1. PYTHON  =====================
+echo   [1/5] Checking for Python...
+set "PY="
+
+REM a) plain 'python' on PATH
 python --version >nul 2>&1
-if errorlevel 1 (
-  echo   [X] Python not found. Install Python 3.10+ from
-  echo       https://www.python.org/downloads/  and tick "Add Python to PATH",
-  echo       then run setup.bat again.
-  goto :end
-)
-echo   [OK] Python found.
+if not errorlevel 1 set "PY=python"
+if defined PY goto :py_ok
 
-REM ---- 2. venv + Python packages ----
-if not exist "venv\" (
-  echo   Creating virtual environment...
-  python -m venv venv
-)
-call venv\Scripts\activate.bat
-echo   Installing Python packages ^(already-installed ones are skipped^)...
-python -m pip install --upgrade pip >nul
-pip install -r requirements.txt
-if errorlevel 1 (
-  echo   [X] Python package install failed. Scroll up for the error.
-  goto :end
-)
-echo   [OK] Python packages installed.
+REM b) the 'py' launcher (installed with Python, often works when python doesn't)
+py --version >nul 2>&1
+if not errorlevel 1 set "PY=py"
+if defined PY goto :py_ok
+
+REM c) python3
+python3 --version >nul 2>&1
+if not errorlevel 1 set "PY=python3"
+if defined PY goto :py_ok
+
+REM d) not on PATH - hunt common install locations, then add to PATH
+echo   Not on PATH - looking in the usual install folders...
+call :find_python
+if defined PYDIR goto :py_addpath
+
+echo   [X] Python was not found anywhere I looked.
+echo       Install Python 3.10+ from https://www.python.org/downloads/
+echo       On the first installer screen, TICK "Add python.exe to PATH".
+echo       Then re-run this script.
+goto :fail
+
+:py_addpath
+echo   Found Python at: !PYDIR!
+echo   Adding it to your PATH (so 'python' works everywhere)...
+REM Add to the CURRENT session so the rest of this run works immediately:
+set "PATH=!PYDIR!;!PYDIR!Scripts\;%PATH%"
+REM Persist to your USER PATH for future sessions (setx, no admin needed):
+for /f "usebackq tokens=2,*" %%A in (`reg query "HKCU\Environment" /v Path 2^>nul`) do set "USERPATH=%%B"
+if not defined USERPATH set "USERPATH="
+echo !USERPATH! | find /i "!PYDIR!" >nul
+if not errorlevel 1 goto :py_path_done
+if not defined USERPATH goto :setx_fresh
+setx Path "!USERPATH!;!PYDIR!;!PYDIR!Scripts\" >nul
+goto :py_path_done
+:setx_fresh
+setx Path "!PYDIR!;!PYDIR!Scripts\" >nul
+:py_path_done
+set "PY=python"
+python --version >nul 2>&1
+if errorlevel 1 set "PY=!PYDIR!python.exe"
+echo   [OK] PATH updated. (New terminals will have Python on PATH from now on.)
+
+:py_ok
+echo   Using: %PY%
+%PY% --version
 echo.
 
-set "HAVE_WINGET=0"
-winget --version >nul 2>&1
-if %errorlevel%==0 set "HAVE_WINGET=1"
-if "!HAVE_WINGET!"=="0" echo   [!] winget not found - the tools below must be installed manually.
-
-REM ---- 3. Git ----
-where git >nul 2>&1
-if %errorlevel%==0 (
-  echo   [OK] Git already installed.
-) else (
-  echo   Installing Git...
-  if "!HAVE_WINGET!"=="1" (
-    winget install -e --id Git.Git --silent --accept-source-agreements --accept-package-agreements
-  ) else (
-    echo   [!] Install Git manually: https://git-scm.com/download/win
-  )
-)
+REM =====================  2. PYTHON PACKAGES  =====================
+echo   [2/5] Setting up the virtual environment and packages...
+if not exist "requirements.txt" goto :no_req
+REM Create the venv if it isn't there yet (run.bat expects venv\Scripts\python.exe).
+if exist "venv\Scripts\python.exe" goto :venv_ready
+echo   Creating virtual environment (venv)...
+%PY% -m venv venv
+if errorlevel 1 goto :venv_fail
+:venv_ready
+echo   Installing packages into the venv from requirements.txt...
+"venv\Scripts\python.exe" -m pip install --upgrade pip >nul 2>&1
+"venv\Scripts\python.exe" -m pip install -r requirements.txt
+if errorlevel 1 goto :pip_fail
+echo   [OK] Virtual environment ready and packages installed.
 echo.
+goto :tools
 
-REM ---- 4. Tesseract OCR ----
-where tesseract >nul 2>&1
-if %errorlevel%==0 (
-  echo   [OK] Tesseract already installed.
-) else (
-  echo   Installing Tesseract OCR...
-  if "!HAVE_WINGET!"=="1" (
-    winget install -e --id UB-Mannheim.TesseractOCR --silent --accept-source-agreements --accept-package-agreements
-  ) else (
-    echo   [!] Install Tesseract manually: https://github.com/UB-Mannheim/tesseract/wiki
-  )
-)
+:venv_fail
+echo   [X] Could not create the virtual environment with %PY%.
+echo       Make sure your Python install includes the 'venv' module (the standard
+echo       python.org installer does), then re-run this script.
+goto :fail
+
+:no_req
+echo   [X] requirements.txt not found next to this script.
+echo       Put setup_all.bat in the Sonario folder (next to app.py) and re-run.
+goto :fail
+
+:pip_fail
+echo   [X] Some Python packages failed to install. Check your internet and re-run.
+goto :fail
+
+REM =====================  3. GIT / OCR TOOLS  =====================
+:tools
+echo   [3/5] Installing helper tools (Git, Tesseract OCR, Poppler)...
+echo         (Windows may show an admin prompt for these - that is expected.)
+where winget >nul 2>&1
+if errorlevel 1 goto :no_winget
+call :winget_install Git.Git "Git"
+call :winget_install UB-Mannheim.TesseractOCR "Tesseract OCR"
+call :winget_install oschwartz10612.Poppler "Poppler"
 echo.
+goto :ollama
 
-REM ---- 5. Poppler ----
-where pdftoppm >nul 2>&1
-if %errorlevel%==0 (
-  echo   [OK] Poppler already installed.
-) else (
-  echo   Installing Poppler...
-  if "!HAVE_WINGET!"=="1" (
-    winget install -e --id oschwartz10612.Poppler --silent --accept-source-agreements --accept-package-agreements
-  ) else (
-    echo   [!] Install Poppler manually: https://github.com/oschwartz10612/poppler-windows
-  )
-)
+:no_winget
+echo   [!] winget is not available on this PC. Skipping Git/OCR auto-install.
+echo       Sonario still works; only SCANNED PDFs/images (OCR) will be unavailable.
 echo.
+goto :ollama
 
-REM ---- 6. Verify ----
+REM =====================  4. OLLAMA + MODELS  =====================
+:ollama
+echo   [4/5] Setting up the local AI (Ollama + models)...
+where ollama >nul 2>&1
+if errorlevel 1 goto :install_ollama
+echo   [OK] Ollama is already installed.
+goto :wait_ollama
+
+:install_ollama
+echo   Ollama isn't installed. Downloading the official installer from ollama.com...
+if exist "OllamaSetup.exe" del /f /q "OllamaSetup.exe" >nul 2>nul
+powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; try{Invoke-WebRequest -Uri 'https://ollama.com/download/OllamaSetup.exe' -OutFile 'OllamaSetup.exe' -MaximumRedirection 5 -UseBasicParsing -ErrorAction Stop}catch{Write-Host $_.Exception.Message; exit 1}"
+if not exist "OllamaSetup.exe" goto :ollama_manual
+powershell -NoProfile -Command "$f=Get-Item 'OllamaSetup.exe'; if($f.Length -lt 1000000){exit 1}; $b=[System.IO.File]::ReadAllBytes($f.FullName); if($b[0]-ne 0x4D -or $b[1]-ne 0x5A){exit 1}; exit 0"
+if errorlevel 1 goto :ollama_bad_file
+echo   Launching the Ollama installer - follow its prompts, then come back here.
+echo   Press a key to start it...
+pause >nul
+start /wait "" "OllamaSetup.exe"
+del /f /q "OllamaSetup.exe" >nul 2>nul
+goto :wait_ollama
+
+:ollama_bad_file
+del /f /q "OllamaSetup.exe" >nul 2>nul
+:ollama_manual
+echo   [!] Automatic download failed. Opening the Ollama download page - install
+echo       it manually (Download for Windows), then re-run this script.
+start "" "https://ollama.com/download"
+goto :fail
+
+:wait_ollama
+echo   Waiting for the Ollama service to come up...
+set "TRIES=0"
+:wait_loop
+timeout /t 2 >nul 2>&1
+powershell -NoProfile -Command "try{Invoke-WebRequest -Uri 'http://localhost:11434/api/tags' -TimeoutSec 3 -UseBasicParsing | Out-Null; exit 0}catch{exit 1}" >nul 2>&1
+if %errorlevel% EQU 0 goto :pull_models
+set /a TRIES+=1
+if %TRIES% EQU 20 start "" ollama serve >nul 2>&1
+if %TRIES% LSS 45 goto :wait_loop
+echo   [!] Ollama hasn't responded yet. It may just be slow the first time.
+echo       Open the Ollama app from the Start menu, wait a bit, then re-run this
+echo       script (it will skip finished steps and just pull the models).
+goto :finish
+
+:pull_models
+echo   Pulling phi4-mini (fast helper, ~2.5GB; skipped if already present)...
+ollama pull phi4-mini
+echo   Pulling qwen3:8b (main model, ~5GB; skipped if already present)...
+ollama pull qwen3:8b
+echo   [OK] Local models ready.
+
+:finish
+echo.
+echo   [5/5] All set.
 echo   ====================================================================
-echo    Verifying
+echo    Sonario is installed. Double-click  run.bat  to start it.
+echo    - Default is Qwen3 8B (local, private). Just run and go.
+echo    - Fast cloud option: pick Groq in the app, paste a free key from
+echo      console.groq.com (no install needed).
+echo    - Google Drive is optional: run  gdrive_setup.bat.
 echo   ====================================================================
-set "G=0"
-where git >nul 2>&1 && set "G=1"
-if exist "%ProgramFiles%\Git\cmd\git.exe" set "G=1"
-if exist "%ProgramFiles(x86)%\Git\cmd\git.exe" set "G=1"
-if exist "%LocalAppData%\Programs\Git\cmd\git.exe" set "G=1"
-if "!G!"=="1" (echo   [OK] Git) else echo   [MISSING] Git - re-run setup.bat, or install from git-scm.com
-set "T=0"
-where tesseract >nul 2>&1 && set "T=1"
-if exist "%ProgramFiles%\Tesseract-OCR\tesseract.exe" set "T=1"
-if "!T!"=="1" (echo   [OK] Tesseract OCR) else echo   [MISSING] Tesseract - re-run setup.bat and click YES on the admin prompt
-where pdftoppm >nul 2>&1 && (echo   [OK] Poppler) || echo   [MISSING] Poppler ^(or PATH not refreshed - it will work next launch^)
+goto :end
+
+REM =====================  helpers  =====================
+
+REM Find a Python install folder in the usual spots. Sets PYDIR (with trailing \).
+:find_python
+set "PYDIR="
+REM Newest first. %LocalAppData% per-user installs:
+for %%V in (313 312 311 310) do call :check_dir "%LocalAppData%\Programs\Python\Python%%V\"
+if defined PYDIR exit /b
+REM All-users installs under Program Files:
+for %%V in (313 312 311 310) do call :check_dir "%ProgramFiles%\Python%%V\"
+if defined PYDIR exit /b
+for %%V in (313 312 311 310) do call :check_dir "%ProgramFiles(x86)%\Python%%V\"
+exit /b
+
+:check_dir
+if defined PYDIR exit /b
+if exist "%~1python.exe" set "PYDIR=%~1"
+exit /b
+
+REM Install one winget package if not already present.
+:winget_install
+winget list --id %~1 >nul 2>&1
+if %errorlevel% EQU 0 goto :wi_skip
+echo       Installing %~2 ...
+winget install --id %~1 -e --source winget --accept-package-agreements --accept-source-agreements
+if errorlevel 1 goto :wi_failed
+echo       [OK] %~2 installed.
+exit /b
+:wi_skip
+echo       %~2 already installed - skipping.
+exit /b
+:wi_failed
+echo       [!] %~2 install skipped or failed - Sonario still runs without it.
+exit /b
+
+:fail
 echo.
-echo   ^(If something shows [MISSING] right after it installed, it just means
-echo    this window's PATH hasn't refreshed yet - it is installed. A new
-echo    window, or a reboot, will see it.^)
-echo.
-echo   Note: the OCR tools are only needed for SCANNED PDFs and images.
-echo   Everything else works without them.
-echo.
-echo   ====================================================================
-echo    Setup complete.  Now double-click  run.bat  to start Sonario.
-echo      First time:  ollama_setup.bat ^(local AI^)   gdrive_setup.bat ^(Drive^)
-echo   ====================================================================
+echo   Setup did not fully complete - see the message above.
 
 :end
 echo.
 pause
+endlocal
 ```
 
 ### `run.bat`
 ```bat
 @echo off
 REM ============================================================================
-REM  Sonario - RUN. Double-click to start the app. Run setup.bat first if you
-REM  haven't yet. Leave this window open while using Sonario; close it to stop.
+REM  Sonario - RUN. Double-click to start the app. Run setup_all.bat first if
+REM  you haven't yet. Leave this window open while using Sonario; close it to stop.
 REM ============================================================================
 cd /d "%~dp0"
 title Sonario
 
 if not exist "venv\Scripts\python.exe" (
   echo.
-  echo   The environment isn't set up yet. Please run  setup.bat  first.
+  echo   The environment isn't set up yet. Please run  setup_all.bat  first.
   echo.
   pause
   exit /b 1
@@ -444,178 +543,11 @@ echo    Starting Sonario...  your browser will open automatically.
 echo    Leave this window open while you use the app. Close it to stop.
 echo.
 echo    First-time setup:
-echo      ollama_setup.bat   - local AI models ^(set once^)
-echo      gdrive_setup.bat   - Google Drive access
+echo      setup_all.bat      - one-time full install ^(Python deps + local AI^)
+echo      gdrive_setup.bat   - Google Drive access ^(optional^)
 echo   ====================================================================
 echo.
 python app.py
-pause
-```
-
-### `ollama_setup.bat`
-
-```bat
-@echo off
-REM ============================================================================
-REM  Sonario - Ollama + local smart-routing models (the default setup).
-REM
-REM  Sonario's default provider runs two small models fully on your machine
-REM  through Ollama - nothing leaves your computer, and it can't be rate-limited
-REM  or suspended. This script:
-REM    1. checks whether Ollama is installed / running,
-REM    2. downloads and runs the official Ollama installer if needed,
-REM    3. waits for the Ollama service to come up,
-REM    4. pulls the two routing models phi4-mini + qwen3:8b (~8GB, one time).
-REM
-REM  Note: Ollama is a normal Windows app, so its installer may show a window and
-REM  a "do you want to allow changes?" (UAC) prompt - that's expected. You only
-REM  install it once.
-REM ============================================================================
-cd /d "%~dp0"
-title Sonario - Ollama + local routing models
-setlocal enableextensions enabledelayedexpansion
-
-set "MODEL_SYNTH=qwen3:8b"
-set "MODEL_FAST=phi4-mini"
-set "OLLAMA_URL=https://ollama.com/download/OllamaSetup.exe"
-
-echo.
-echo   ====================================================================
-echo    Local AI setup: Ollama + smart-routing models
-echo    (synthesis: %MODEL_SYNTH%   fast: %MODEL_FAST%)
-echo   ====================================================================
-echo.
-
-REM ---- 1. Is Ollama already responding on its default port (11434)? ----
-echo   [1/4] Checking whether Ollama is already running...
-powershell -NoProfile -Command "try{(Invoke-WebRequest -Uri 'http://localhost:11434/api/tags' -TimeoutSec 3 -UseBasicParsing) ^| Out-Null; exit 0}catch{exit 1}" >nul 2>&1
-if %errorlevel%==0 (
-  echo   [OK] Ollama is already running. Skipping install.
-  goto :pull
-)
-
-REM ---- 2. Is the ollama command installed but not started? ----
-where ollama >nul 2>&1
-if %errorlevel%==0 (
-  echo        Ollama is installed but not running - starting it...
-  start "" ollama serve
-  goto :wait_service
-)
-
-REM ---- 3. Not installed: download and run the official installer ----
-echo        Ollama isn't installed yet. Downloading the official installer...
-echo        (from ollama.com - this is the real Ollama, not bundled by Sonario)
-if exist "OllamaSetup.exe" del /f /q "OllamaSetup.exe" >nul 2>nul
-REM Use a TLS1.2 + redirect-following download, and don't swallow errors silently.
-powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; try{Invoke-WebRequest -Uri '%OLLAMA_URL%' -OutFile 'OllamaSetup.exe' -MaximumRedirection 5 -UseBasicParsing -ErrorAction Stop}catch{Write-Host $_.Exception.Message; exit 1}"
-
-REM Validate the download BEFORE running it. A truncated/redirected file (e.g. an
-REM HTML error page saved as .exe) is the usual cause of "setup files are corrupted".
-REM Real installers are many MB and start with the 'MZ' executable signature.
-if not exist "OllamaSetup.exe" goto :dl_bad
-powershell -NoProfile -Command "$f=Get-Item 'OllamaSetup.exe'; if($f.Length -lt 1000000){exit 1}; $b=[System.IO.File]::ReadAllBytes($f.FullName); if($b.Length -lt 2 -or $b[0]-ne 0x4D -or $b[1]-ne 0x5A){exit 1}; exit 0"
-if errorlevel 1 (
-  echo.
-  echo   [X] The downloaded installer looks incomplete or corrupted (this can happen
-  echo       with antivirus or a dropped connection). Deleting it.
-  del /f /q "OllamaSetup.exe" >nul 2>nul
-  goto :dl_bad
-)
-echo        Download looks good.
-echo        Launching the Ollama installer. Follow its prompts (a UAC window
-echo        and an installer window are normal). This installs Ollama as a
-echo        background service that starts on its own.
-echo.
-echo        Press a key to start the installer...
-pause >nul
-start /wait "" "OllamaSetup.exe"
-del /f /q "OllamaSetup.exe" >nul 2>nul
-
-REM Make sure it's actually serving (the installer usually starts it for you).
-where ollama >nul 2>&1
-if %errorlevel% neq 0 (
-  echo.
-  echo   [!] Ollama doesn't seem to be on PATH yet. You may need to close and
-  echo       reopen this window (or sign out/in) so Windows picks it up, then
-  echo       re-run this script. If it still fails, open the Ollama app once
-  echo       from the Start menu, then re-run.
-  goto :end
-)
-start "" ollama serve
-
-:wait_service
-echo   [2/4] Waiting for the Ollama service to come up (can take a minute on a
-echo         fresh install)...
-set "TRIES=0"
-:wait_loop
-timeout /t 2 >nul 2>&1
-powershell -NoProfile -Command "try{(Invoke-WebRequest -Uri 'http://localhost:11434/api/tags' -TimeoutSec 3 -UseBasicParsing) ^| Out-Null; exit 0}catch{exit 1}" >nul 2>&1
-if %errorlevel%==0 goto :pull
-set /a TRIES+=1
-REM Halfway through, nudge the server to start again in case it didn't.
-if %TRIES%==20 (
-  echo        Still waiting - giving the server another nudge...
-  start "" ollama serve >nul 2>&1
-)
-if %TRIES% lss 45 goto :wait_loop
-echo.
-echo   [!] Ollama hasn't responded yet, but it may just be slow to start the first
-echo       time. Two options:
-echo         - Open the Ollama app from the Start menu (it lives in the system
-echo           tray), wait a few seconds, then re-run this script; OR
-echo         - Open a terminal and run:  ollama pull phi4-mini
-echo           If that downloads, Ollama is fine and you can ignore this warning.
-goto :end
-
-:pull
-echo   [3/4] Ollama is up.
-echo   [4/4] Pulling the models (one-time downloads, ~8GB total):
-echo          - %MODEL_FAST%   (fast helper, the heavy repetitive work)
-echo          - %MODEL_SYNTH%  (stronger model, the final write-up)
-echo        Grab a coffee - this can take a while on a slow connection.
-echo        Re-runs are instant once they're cached.
-echo.
-echo   Pulling %MODEL_FAST% ...
-ollama pull %MODEL_FAST%
-if errorlevel 1 (
-  echo   [X] Could not pull %MODEL_FAST%. Check your internet and re-run.
-  goto :end
-)
-echo.
-echo   Pulling %MODEL_SYNTH% ...
-ollama pull %MODEL_SYNTH%
-if errorlevel 1 (
-  echo   [X] Could not pull %MODEL_SYNTH%. Check your internet and re-run.
-  goto :end
-)
-echo.
-echo   ====================================================================
-echo    [OK] Done. The local smart-routing setup is ready.
-echo   ====================================================================
-echo    In Sonario, "Local (smart routing...)" is already the selected provider.
-echo    Click "Test connection" to confirm. The first run is slower while a model
-echo    loads into memory - that's normal.
-echo.
-echo    Heads-up: on an 8GB GPU the two models can't both stay resident, so Sonario
-echo    swaps between them - long jobs work but aren't instant. Switch to a cloud
-echo    provider in the dropdown if you need more speed.
-
-:dl_bad
-echo.
-echo   ====================================================================
-echo    Automatic download didn't work - install Ollama manually (1 minute)
-echo   ====================================================================
-echo    1. Your browser will open the Ollama download page.
-echo    2. Click "Download for Windows" and run the installer.
-echo    3. When it's done, run THIS script again - it will skip the download,
-echo       detect Ollama, and go straight to pulling the models.
-echo.
-echo    Opening https://ollama.com/download ...
-start "" "https://ollama.com/download"
-goto :end
-
-:end
-echo.
 pause
 ```
 

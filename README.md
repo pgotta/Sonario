@@ -46,15 +46,16 @@ free engine as the Sonario mobile app (bring your own free key).
 
 ## Quick start
 
-1. Follow **[BUILD.md](BUILD.md)** once to install (it is mostly double-clicking
-   `setup.bat`).
-2. Set up the default local model: double-click **`ollama_setup.bat`** (it installs
-   [Ollama](https://ollama.com) if needed and pulls the models, once). This runs
-fully on your machine with nothing sent to any provider. *Prefer a fast cloud model?*
-Pick Groq from the dropdown and paste your free API key (console.groq.com).
-3. Double-click **`run.bat`** to start the app, then open
+1. Double-click **`setup_all.bat`** once. It does the whole install: finds Python
+   (and fixes your PATH if needed), creates the environment, installs the Python
+   packages and OCR tools, installs [Ollama](https://ollama.com) if needed, and
+   pulls the local models. Safe to re-run; it skips anything already done. This
+   runs fully on your machine with nothing sent to any provider. *Prefer a fast
+   cloud model?* Pick Groq from the dropdown and paste your free API key
+   (console.groq.com). See **[BUILD.md](BUILD.md)** for details.
+2. Double-click **`run.bat`** to start the app, then open
    `http://127.0.0.1:5005` if it does not open by itself.
-4. Use the top tabs to switch between **Analyze Collection** and **Summarizer**.
+3. Use the top tabs to switch between **Analyze Collection** and **Summarizer**.
 Both screens show results on screen with **Download .md / .pdf**.
 
 > **Want to try Analyze right away?** The download includes a `Sample Documents`
@@ -163,8 +164,8 @@ any provider in the dropdown for a short description of when to use it.
 
 | Provider | Cost | Where it runs | Needs |
 |---|---|---|---|
-| **Qwen3 8B** *(recommended, default)* | Free | **Fully local** on your GPU | [Ollama](https://ollama.com) + `ollama_setup.bat` |
-| **Smart routing** | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `ollama_setup.bat` (phi4-mini + qwen3:8b) |
+| **Qwen3 8B** *(recommended, default)* | Free | **Fully local** on your GPU | [Ollama](https://ollama.com) + `setup_all.bat` |
+| **Smart routing** | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `setup_all.bat` (phi4-mini + qwen3:8b) |
 | **Phi-4-mini** *(lightweight)* | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `ollama pull phi4-mini` |
 | **Ollama** *(any model)* | Free | Fully local on your machine | [Ollama](https://ollama.com) and any pulled model |
 | **Groq — Llama 4 Scout** | Free (bring your own key) | Cloud | Free API key from console.groq.com |
@@ -174,7 +175,7 @@ users can add their own in [`models.json`](#adding-providers).
 
 > **Qwen3 8B (the default).** One strong local model that does every step at full
 > quality. It's the best all-round choice for a typical 8GB gaming laptop — fully
-> private, no account, can't be rate-limited. Run **`ollama_setup.bat`** once.
+> private, no account, can't be rate-limited. Run **`setup_all.bat`** once.
 
 > **Smart routing (optional).** Splits the work between two local models: the
 > lightweight **phi4-mini** for the heavy repetitive parts (per-chunk summaries,
@@ -204,7 +205,7 @@ users can add their own in [`models.json`](#adding-providers).
 ## Supported files
 
 `.txt .md .rtf .docx .pdf .epub` plus **scanned PDFs and images** via OCR.
-`setup.bat` installs the OCR tools (Tesseract and Poppler) for you; see BUILD.md
+`setup_all.bat` installs the OCR tools (Tesseract and Poppler) for you; see BUILD.md
 for the manual links. Without them, everything except scanned images still works.
 
 ## Adding providers
