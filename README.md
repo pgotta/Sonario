@@ -191,9 +191,12 @@ users can add their own in [`models.json`](#adding-providers).
 > **Groq — Llama 4 Scout (cloud).** The fast path, and the same engine as the
 > Sonario mobile app. Summarizes long videos and whole books in one pass (128k
 > context) in seconds, with no local GPU load. Free to use with your own API key
-> from [console.groq.com](https://console.groq.com) (no credit card). The trade-off
-> is privacy: your text is sent to Groq's servers, so use a local model for
-> anything sensitive. See BUILD.md for the one-minute key setup.
+> from [console.groq.com](https://console.groq.com) (no credit card). Tick
+> **"Remember this key on this PC"** and you only paste it once - it's saved
+> locally (in plain text, in the gitignored `credentials/` folder) and filled in
+> on every launch. The trade-off is privacy: your text is sent to Groq's servers,
+> so use a local model for anything sensitive. See BUILD.md for the one-minute
+> key setup.
 
 > **A note on privacy.** Sonario runs locally, but where your *text* goes depends
 > on the provider. With the **local** models (Qwen3 8B, Phi-4-mini, smart routing,
@@ -264,6 +267,7 @@ sources.py Summarizer inputs: YouTube / web page / EPUB / files
 pipeline.py map / reduce / synthesize / prompts / summarize
 gdrive.py Google Drive web OAuth (read-only, isolated)
 export.py Markdown + PDF export
+keystore.py       remembers cloud API keys locally (opt-in)
 models.json add custom providers without editing code
 static/ single-file SPA + icons
 *.bat setup and launch scripts (see BUILD.md)

@@ -297,6 +297,8 @@
   .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
   .note{font-size:12.5px;color:var(--ink-soft);margin-top:9px}
   .pill{font-size:11px;border-radius:999px;padding:3px 9px;font-weight:600}
+  .remember{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--ink-soft);cursor:pointer;user-select:none}
+  .remember input{cursor:pointer}
   .pill.ok{background:var(--good-bg);color:var(--good-ink)}.pill.bad{background:var(--bad-bg);color:var(--bad-ink)}.pill.warn{background:#4a3f1e;color:#e0b341}
   .drop{border:2px dashed var(--rule);border-radius:12px;padding:30px 20px;text-align:center;background:var(--panel-2);cursor:pointer;transition:.15s}
   .drop:hover,.drop.over{border-color:var(--gold);background:rgba(217,176,97,.08)}
@@ -470,7 +472,7 @@
           <h2>2 · Which AI reads them?</h2>
           <p class="hint">Runs locally and privately on your machine. The default, Qwen3 8B, is recommended for a typical 8GB gaming laptop. Needs Ollama (see BUILD.md). Hover a provider for details; switch any time.</p>
           <div class="two"><div class="row"><label class="fld">Provider</label><select id="provider"></select></div><div class="row"><label class="fld">Model</label><input type="text" id="model"></div></div>
-          <div class="row" id="keyRow" style="display:none"><label class="fld">API key</label><input type="password" id="apiKey" placeholder="stored only in memory for this run"></div>
+          <div class="row" id="keyRow" style="display:none"><label class="fld">API key</label><input type="password" id="apiKey" placeholder="paste your key"><label class="remember"><input type="checkbox" id="rememberKey"> Remember this key on this PC</label><span class="note" id="keyNote"></span></div>
           <div class="row" id="baseRow" style="display:none"><label class="fld">Base URL (advanced)</label><input type="text" id="baseUrl"></div>
           <div class="actions"><button class="btn ghost small" id="testBtn">Test connection</button><span id="testOut"></span></div>
           <div class="note" id="provNote"></div>
@@ -562,7 +564,7 @@
         <h2>Which AI?</h2>
         <p class="hint">Same providers as Analyze. Default is Qwen3 8B (recommended, runs locally).</p>
         <div class="two"><div class="row"><label class="fld">Provider</label><select id="sumProvider"></select></div><div class="row"><label class="fld">Model</label><input type="text" id="sumModel"></div></div>
-        <div class="row" id="sumKeyRow" style="display:none"><label class="fld">API key</label><input type="password" id="sumApiKey" placeholder="stored only in memory for this run"></div>
+        <div class="row" id="sumKeyRow" style="display:none"><label class="fld">API key</label><input type="password" id="sumApiKey" placeholder="paste your key"><label class="remember"><input type="checkbox" id="sumRememberKey"> Remember this key on this PC</label><span class="note" id="sumKeyNote"></span></div>
         <div class="row" id="sumBaseRow" style="display:none"><label class="fld">Base URL (advanced)</label><input type="text" id="sumBaseUrl"></div>
       </div>
       <div class="card"><div class="actions"><button class="btn teal" id="sumStart">Summarize</button><span class="note" id="sumHint" style="margin-top:0">Whole books and long videos are read in sections, then condensed into one page.</span></div></div>
@@ -630,8 +632,43 @@ async function loadModes(){
 }
 function applyMode(){const m=MODES[$('#mode').value];$('#modeBlurb').textContent=m?m.blurb:'';}
 const ADV=['groq','ollama'];
-function applyProvider(){const p=PROVIDERS[$('#provider').value];$('#model').value=p.model;$('#baseUrl').value=p.base_url;$('#keyRow').style.display=p.needs_key?'block':'none';$('#baseRow').style.display=ADV.includes($('#provider').value)?'block':'none';$('#provider').title=p.tip||'';let note=p.note||'';if(p.fast_model){note='Synthesis model: '+p.model+'  |  Fast model: '+p.fast_model+'. '+note;}$('#provNote').textContent=note;updateWarn();}
-function applySumProvider(){const p=PROVIDERS[$('#sumProvider').value];$('#sumModel').value=p.model;$('#sumBaseUrl').value=p.base_url;$('#sumKeyRow').style.display=p.needs_key?'block':'none';$('#sumBaseRow').style.display=ADV.includes($('#sumProvider').value)?'block':'none';}
+function applyProvider(){const p=PROVIDERS[$('#provider').value];$('#model').value=p.model;$('#baseUrl').value=p.base_url;$('#keyRow').style.display=p.needs_key?'block':'none';$('#baseRow').style.display=ADV.includes($('#provider').value)?'block':'none';$('#provider').title=p.tip||'';let note=p.note||'';if(p.fast_model){note='Synthesis model: '+p.model+'  |  Fast model: '+p.fast_model+'. '+note;}$('#provNote').textContent=note;updateWarn();loadSavedKey('#provider','#apiKey','#rememberKey','#keyNote');}
+function applySumProvider(){const p=PROVIDERS[$('#sumProvider').value];$('#sumModel').value=p.model;$('#sumBaseUrl').value=p.base_url;$('#sumKeyRow').style.display=p.needs_key?'block':'none';$('#sumBaseRow').style.display=ADV.includes($('#sumProvider').value)?'block':'none';loadSavedKey('#sumProvider','#sumApiKey','#sumRememberKey','#sumKeyNote');}
+
+/* ---- Remembered API keys (opt-in, stored locally in credentials/) ---- */
+async function loadSavedKey(selSel,keySel,cbSel,noteSel){
+  const p=PROVIDERS[$(selSel).value]||{};
+  const note=$(noteSel);
+  if(!p.needs_key){ if(note)note.textContent=''; return; }
+  try{
+    const r=await(await fetch('/api/keys/get',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({provider:$(selSel).value})})).json();
+    if(r.api_key){
+      $(keySel).value=r.api_key;
+      $(cbSel).checked=true;
+      if(note)note.textContent='Key remembered on this PC.';
+    }else{
+      $(keySel).value='';
+      $(cbSel).checked=false;
+      if(note)note.textContent='';
+    }
+  }catch(e){}
+}
+async function persistKey(selSel,keySel,cbSel,noteSel){
+  const pid=$(selSel).value, key=$(keySel).value.trim(), remember=$(cbSel).checked;
+  const note=$(noteSel);
+  try{
+    if(remember && key){
+      const r=await(await fetch('/api/keys/save',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({provider:pid,api_key:key})})).json();
+      if(note)note.textContent=r.ok?'Key remembered on this PC.':(r.message||'Could not save.');
+    }else{
+      await fetch('/api/keys/forget',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({provider:pid})});
+      if(note)note.textContent=remember?'':'Not remembered (memory only for this run).';
+    }
+  }catch(e){}
+}
 function providerCfg(){const p=PROVIDERS[$('#provider').value]||{};return{provider:$('#provider').value,model:$('#model').value.trim(),fast_model:p.fast_model||'',base_url:$('#baseUrl').value.trim(),api_key:$('#apiKey').value.trim()};}
 function sumProviderCfg(){const p=PROVIDERS[$('#sumProvider').value]||{};return{provider:$('#sumProvider').value,model:$('#sumModel').value.trim(),fast_model:p.fast_model||'',base_url:$('#sumBaseUrl').value.trim(),api_key:$('#sumApiKey').value.trim()};}
 
@@ -652,6 +689,10 @@ async function gdriveStatus(){try{const r=await(await fetch('/api/gdrive_status'
   else{pill.className='pill bad';pill.textContent='credentials.json missing';note.innerHTML='Not connected yet, see <strong>Google Drive setup</strong>.';}
 }catch(e){}}
 $('#recheck').onclick=gdriveStatus;
+$('#rememberKey').onchange=()=>persistKey('#provider','#apiKey','#rememberKey','#keyNote');
+$('#apiKey').onchange=()=>{if($('#rememberKey').checked)persistKey('#provider','#apiKey','#rememberKey','#keyNote');};
+$('#sumRememberKey').onchange=()=>persistKey('#sumProvider','#sumApiKey','#sumRememberKey','#sumKeyNote');
+$('#sumApiKey').onchange=()=>{if($('#sumRememberKey').checked)persistKey('#sumProvider','#sumApiKey','#sumRememberKey','#sumKeyNote');};
 $('#gdriveConnect').onclick=async()=>{const out=$('#gdriveConnectOut');out.innerHTML='<span class="note">a browser window will open to authorize… approve it, then come back</span>';try{const r=await(await fetch('/api/gdrive_connect',{method:'POST'})).json();out.innerHTML=r.ok?'<span class="pill ok">connected</span>':`<span class="pill bad">failed</span> <span class="note">${esc(r.message||'')}</span>`;gdriveStatus();}catch(e){out.innerHTML='<span class="pill bad">error</span>';}};
 $('#startBtn').onclick=async()=>{const cfg=providerCfg();cfg.use_folder=$('#useFolder').checked;cfg.use_gdrive=$('#useGdrive').checked;cfg.folder_path=$('#folderPath').value;cfg.gdrive_link=$('#gdriveLink').value;cfg.mode=$('#mode').value;if(!cfg.use_folder&&!cfg.use_gdrive){alert('Select at least one source: Windows folder, Google Drive, or both.');return;}if(cfg.use_folder&&!cfg.folder_path.trim()){alert('Enter a Windows folder path (or uncheck Windows folder).');return;}if(cfg.use_gdrive&&!cfg.gdrive_link.trim()){alert('Paste a Drive folder link (or uncheck Google Drive).');return;}const r=await(await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)})).json();if(!r.ok){alert(r.message||'Could not start.');return;}$('#reportReady').style.display='none';$('#progressCard').style.display='block';$('#startBtn').disabled=true;$('#stopBtn').style.display='inline-block';$('#progressCard').scrollIntoView({behavior:'smooth'});startPolling();};
 $('#stopBtn').onclick=async()=>{await fetch('/api/stop',{method:'POST'});};

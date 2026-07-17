@@ -7,6 +7,7 @@ output/*
 !cache/.gitkeep
 credentials/credentials.json
 credentials/token.json
+credentials/api_keys.json
 .DS_Store
 history/
 history/*.json

@@ -104,8 +104,17 @@ Setup (about a minute):
 
 Notes:
 
-- The key is held only in memory for the current run - it is not written to disk.
-  You paste it each time you start the app (or keep it in your password manager).
+- **Remembering the key.** By default the key is held only in memory for the
+  current run. Tick **"Remember this key on this PC"** under the key box and
+  Sonario saves it to `credentials/api_keys.json` so it's filled in automatically
+  every time you start the app. Untick it to forget the key immediately.
+- **Honest note on that:** a remembered key is stored in **plain text** in your
+  `credentials/` folder (which is gitignored, so it is never committed). Anything
+  that can read your user account's files can read it. There is no meaningful way
+  to encrypt it locally, because the app would need the decryption key sitting
+  right next to it - this is the same trade-off every desktop app makes when it
+  offers to remember a key. It never leaves your machine. If you'd rather not
+  store a key at all, leave the box unticked, or use the local models.
 - Groq has a generous free tier with per-minute rate limits. Very large jobs may
   briefly hit those limits; if so, wait a moment and retry, or use a local model.
 - The model string (`meta-llama/llama-4-scout-17b-16e-instruct`) and endpoint
@@ -261,6 +270,7 @@ sources.py          Summarizer inputs: YouTube / web page / EPUB / files
 pipeline.py         map / reduce / synthesize / prompts / summarize
 gdrive.py           Google Drive web OAuth (read-only, isolated)
 export.py           Markdown + PDF export
+keystore.py       remembers cloud API keys locally (opt-in)
 models.json         add custom providers without editing code
 static/             single-file SPA + icons
 ```

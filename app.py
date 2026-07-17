@@ -46,6 +46,7 @@ import extract
 import export
 import sources
 import sysmon
+import keystore
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, static_folder=os.path.join(APP_DIR, "static"))
@@ -164,12 +165,19 @@ def _build_provider(cfg):
     pid = cfg.get("provider", "local-qwen8b")
     preset = providers.PROVIDERS.get(pid, {})
 
+    # API key: use what the UI sent; if it's blank, fall back to a key the user
+    # chose to remember (keystore). Lets you start the app and go without
+    # retyping a cloud key every launch.
+    api_key = (cfg.get("api_key") or "").strip()
+    if not api_key and preset.get("needs_key"):
+        api_key = keystore.get_key(pid)
+
     # The synthesis (main) provider - the user-facing model.
     synth = providers.LLMProvider(
         provider_id=pid,
         base_url=cfg.get("base_url") or None,
         model=cfg.get("model") or None,
-        api_key=cfg.get("api_key") or None,
+        api_key=api_key or None,
     )
 
     # Decide the fast/helper model. Priority: explicit UI value, then the preset's
@@ -180,7 +188,7 @@ def _build_provider(cfg):
             provider_id=pid,
             base_url=cfg.get("base_url") or None,
             model=fast_model,
-            api_key=cfg.get("api_key") or None,
+            api_key=api_key or None,
         )
         return providers.RoutingProvider(synth=synth, fast=fast)
 
@@ -355,6 +363,58 @@ def index():
 def api_providers():
     return jsonify({k: {kk: vv for kk, vv in v.items()}
                     for k, v in providers.PROVIDERS.items()})
+
+
+@app.route("/api/keys")
+def api_keys():
+    """Which providers have a remembered key (never returns the keys themselves)."""
+    try:
+        return jsonify({"saved": keystore.saved_providers()})
+    except Exception:
+        return jsonify({"saved": []})
+
+
+@app.route("/api/keys/save", methods=["POST"])
+def api_keys_save():
+    """Remember (or update) an API key for a provider, at the user's request.
+
+    The key is written in plain text to credentials/api_keys.json - see
+    keystore.py for the honest security note. Opt-in only: the UI calls this when
+    the user ticks "Remember".
+    """
+    data = request.get_json(force=True) or {}
+    pid = (data.get("provider") or "").strip()
+    key = (data.get("api_key") or "").strip()
+    if not pid:
+        return jsonify({"ok": False, "message": "No provider given."})
+    if not key:
+        return jsonify({"ok": False, "message": "No key given."})
+    ok = keystore.save_key(pid, key)
+    return jsonify({"ok": ok,
+                    "message": "Key remembered." if ok else "Could not save the key."})
+
+
+@app.route("/api/keys/forget", methods=["POST"])
+def api_keys_forget():
+    """Delete a remembered key."""
+    data = request.get_json(force=True) or {}
+    pid = (data.get("provider") or "").strip()
+    if not pid:
+        return jsonify({"ok": False, "message": "No provider given."})
+    ok = keystore.forget_key(pid)
+    return jsonify({"ok": ok, "message": "Key forgotten." if ok else "Could not remove the key."})
+
+
+@app.route("/api/keys/get", methods=["POST"])
+def api_keys_get():
+    """Return a remembered key so the UI can prefill the box on load.
+
+    This only ever serves 127.0.0.1 (single-user local app), and only returns a
+    key the user explicitly chose to save on this machine.
+    """
+    data = request.get_json(force=True) or {}
+    pid = (data.get("provider") or "").strip()
+    return jsonify({"api_key": keystore.get_key(pid) if pid else ""})
 
 
 @app.route("/api/sysload")
