@@ -8,6 +8,7 @@ output/*
 credentials/credentials.json
 credentials/token.json
 credentials/api_keys.json
+credentials/groq_usage.json
 .DS_Store
 history/
 history/*.json

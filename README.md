@@ -173,7 +173,7 @@ any provider in the dropdown for a short description of when to use it.
 All speak the OpenAI-compatible format, so switching is just a dropdown. Advanced
 users can add their own in [`models.json`](#adding-providers).
 
-> **Qwen3.5 9B (the default).** One strong local model that does every step at full
+> **Qwen3.5 9B (the default).** About 6.6 GB. One strong local model that does every step at full
 > quality. It's the best all-round choice for a typical 8GB gaming laptop — fully
 > private, no account, can't be rate-limited. Run **`setup_all.bat`** once.
 
@@ -184,12 +184,12 @@ users can add their own in [`models.json`](#adding-providers).
 > everything, and on an 8GB GPU the two models can't both stay resident so Ollama
 > swaps between them. Use it if long-job speed matters more than maximum quality.
 
-> **Qwen3.5 4B (lightweight).** The smallest, fastest local model. Best for weaker
+> **Qwen3.5 4B (lightweight).** About 3.4 GB. The smallest, fastest local model. Best for weaker
 > or CPU-only machines, or when speed matters more than depth. Lower quality on
 > long or complex sources.
 
 > **Groq - Qwen 3.6 27B (cloud).** The fast path, and the same engine as the
-> Sonario mobile app. Runs much faster than local inference. Sonario splits long sources into rate-safe calls, with no local GPU load. Free to use with your own API key
+> Sonario mobile app. It runs much faster than local inference and Sonario splits long sources into rate-safe calls. There is no local GPU load. Free to use with your own API key
 > from [console.groq.com](https://console.groq.com) (no credit card). Tick
 > **"Remember this key on this PC"** and you only paste it once - it's saved
 > locally (in plain text, in the gitignored `credentials/` folder) and filled in
@@ -246,11 +246,7 @@ What this means for the providers:
 
 - **Cloud provider** (Groq) doesn't depend on
 your hardware at all — the work happens on their servers. Any modern PC is fine.
-- **Local default (smart routing: qwen3.5:4b + qwen3.5:9b)** needs ~8 GB total for the
-two models. On the 8 GB GPU above they can't both stay resident, so Ollama swaps
-between them as the job moves between roles — it works, but adds a short pause on
-each swap, so long jobs aren't instant. A GPU with more VRAM (12 GB+) would hold
-both at once and run much faster.
+- **Optional smart routing (qwen3.5:4b + qwen3.5:9b)** downloads about 10 GB total. On the 8 GB reference GPU, Ollama swaps models between stages, which works but adds a short pause. A GPU with 16 GB or more VRAM is a safer target for keeping both loaded together.
 - **Want to avoid swapping?** Pick a single-model local provider (Qwen3.5 9B on its
 own, or the lighter Qwen3.5 4B) so only one model loads — no swap pauses, at the
 cost of either depth (Qwen3.5 4B) or the fast/slow split.

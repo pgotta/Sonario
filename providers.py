@@ -97,6 +97,11 @@ def _load_user_providers():
             "needs_key": bool(cfg.get("needs_key", False)),
             "min_interval": float(cfg.get("min_interval", 0.0)),
             "note": cfg.get("note", ""),
+            "tip": cfg.get("tip", ""),
+            "fast_model": cfg.get("fast_model"),
+            "routed": bool(cfg.get("routed", False)),
+            "reasoning_effort": cfg.get("reasoning_effort"),
+            "max_tokens": int(cfg.get("max_tokens", 0) or 0),
         }
 
 
@@ -131,14 +136,15 @@ class GroqRateLimiter:
     WINDOW = 60.0
     MAX_REQUEST = 7200
 
-    def __init__(self):
+    def __init__(self, usage_path=None):
         self.lock = threading.RLock()
         self.tokens = deque()
         self.requests = deque()
         self.server_remaining = None
         self.server_reset = 0.0
         self.blocked_until = 0.0
-        self.usage_path = os.path.join(os.path.dirname(__file__), "credentials", "groq_usage.json")
+        self.usage_path = str(usage_path or os.path.join(os.path.dirname(__file__), "credentials", "groq_usage.json"))
+        self.next_reservation = 1
         self.day = ""
         self.daily = 0
         self._load_day()
@@ -190,10 +196,10 @@ class GroqRateLimiter:
                 if self.daily + amount > self.TPD:
                     raise ProviderDailyLimitError("Groq's Qwen 3.6 daily quota is exhausted. Completed Analyze Collection documents are cached. Continue after reset or use a local Ollama model.")
                 now = time.time(); self._trim(now); wait = 0.0
-                used = sum(x[1] for x in self.tokens)
+                used = sum(row[1] for row in self.tokens)
                 if used + amount > self.TPM and self.tokens:
                     need = used + amount - self.TPM
-                    for stamp, spent in self.tokens:
+                    for stamp, spent, _reservation_id in self.tokens:
                         need -= spent
                         if need <= 0:
                             wait = max(wait, stamp + self.WINDOW - now); break
@@ -204,25 +210,41 @@ class GroqRateLimiter:
                 if self.server_remaining is not None and amount > self.server_remaining and self.server_reset > now:
                     wait = max(wait, self.server_reset - now)
                 if wait <= 0:
-                    self.tokens.append([now, amount]); self.requests.append(now)
-                    self.daily += amount; self._save(); break
+                    reservation_id = self.next_reservation
+                    self.next_reservation += 1
+                    self.tokens.append([now, amount, reservation_id])
+                    self.requests.append(now)
+                    self.daily += amount
+                    self._save()
+                    break
             waited = True
             if on_wait: on_wait(max(1, math.ceil(wait)))
             time.sleep(min(wait, 1.0))
         if waited and on_wait: on_wait(0)
-        return amount
+        return reservation_id, amount
 
-    def settle(self, reserved, actual):
+    def settle(self, reservation, actual):
+        reservation_id, reserved = reservation
         actual = max(0, int(actual if actual is not None else reserved))
         with self.lock:
             self._refresh()
-            if self.tokens:
-                self.tokens[-1][1] = actual
-            self.daily = max(0, self.daily - reserved + actual); self._save()
+            for row in self.tokens:
+                if row[2] == reservation_id:
+                    row[1] = actual
+                    break
+            self.daily = max(0, self.daily - reserved + actual)
+            self._save()
 
-    def refund(self, reserved):
+    def refund(self, reservation):
+        reservation_id, reserved = reservation
         with self.lock:
-            self._refresh(); self.daily = max(0, self.daily - reserved); self._save()
+            self._refresh()
+            for row in list(self.tokens):
+                if row[2] == reservation_id:
+                    self.tokens.remove(row)
+                    break
+            self.daily = max(0, self.daily - reserved)
+            self._save()
 
     def headers(self, headers):
         try:

@@ -561,7 +561,10 @@ def summarize_chapters(provider, chapters, progress=None):
         try:
             summary = _clean_summary(fast.chat(
                 CHAPTER_SUMMARY_SYSTEM,
-                f"Chapter title: {title}\n\nChapter text:\n\"\"\"\n{snippet}\n\"\"\""))
+                f"Chapter title: {title}\n\nChapter text:\n\"\"\"\n{snippet}\n\"\"\"",
+                max_tokens=900))
+        except ProviderDailyLimitError:
+            raise
         except Exception:
             summary = "_(This chapter could not be summarized.)_"
         out.append(f"## {title}\n\n{summary}\n")
@@ -751,7 +754,10 @@ def _final_combine(provider, joined, single_limit, chunk_size, progress=None):
     # 1) normal one-shot combine (final output -> SYNTH model)
     try:
         return synth.chat(REDUCE_SUMMARY_SYSTEM,
-                          f"Section notes, in order:\n\n{joined}")
+                          f"Section notes, in order:\n\n{joined}",
+                          max_tokens=1600)
+    except ProviderDailyLimitError:
+        raise
     except Exception:
         pass
 
@@ -766,7 +772,9 @@ def _final_combine(provider, joined, single_limit, chunk_size, progress=None):
     for i in range(0, len(blocks), batch_size):
         batch = "\n\n".join(blocks[i:i + batch_size])
         try:
-            partials.append(fast.chat(CHUNK_SYSTEM, batch))
+            partials.append(fast.chat(CHUNK_SYSTEM, batch, max_tokens=700))
+        except ProviderDailyLimitError:
+            raise
         except Exception:
             # keep the raw notes for this batch rather than dropping them
             partials.append(batch[:1500])
@@ -775,7 +783,10 @@ def _final_combine(provider, joined, single_limit, chunk_size, progress=None):
         small = small[:single_limit]
     try:
         return synth.chat(REDUCE_SUMMARY_SYSTEM,
-                          f"Section notes, in order:\n\n{small}")
+                          f"Section notes, in order:\n\n{small}",
+                          max_tokens=1600)
+    except ProviderDailyLimitError:
+        raise
     except Exception:
         pass
 
@@ -811,7 +822,7 @@ def summarize_text(provider, text, meta=None, progress=None):
     if len(text) <= single_limit:
         if progress:
             progress({"phase": "summarizing", "chunk": 1, "chunks": 1})
-        full = synth.chat(SUMMARY_SYSTEM, f"Source:\n\"\"\"\n{text}\n\"\"\"")
+        full = synth.chat(SUMMARY_SYSTEM, f"Source:\n\"\"\"\n{text}\n\"\"\"", max_tokens=1600)
         detail_source = text   # short doc: detailed can read the whole thing
     else:
         # Long source: map-reduce. Resilient to occasional provider failures.
@@ -825,7 +836,7 @@ def summarize_text(provider, text, meta=None, progress=None):
                 progress({"phase": "condensing", "chunk": i + 1, "chunks": len(chunks)})
             try:
                 note = fast.chat(CHUNK_SYSTEM, f"Section {i+1} of {len(chunks)}:\n"
-                                               f"\"\"\"\n{ch}\n\"\"\"")
+                                               f"\"\"\"\n{ch}\n\"\"\"", max_tokens=700)
                 notes.append(f"[Section {i+1}]\n{note}")
             except ProviderDailyLimitError:
                 raise
@@ -924,8 +935,10 @@ def _build_detailed(synth, source, single_limit):
     # one-page limit before we have to batch.
     cap = max(single_limit, 16000)
     if len(source) <= cap:
-        return _clean_summary(synth.chat(DETAILED_SUMMARY_SYSTEM,
-                                         f"Source material:\n\"\"\"\n{source}\n\"\"\""))
+        return _clean_summary(synth.chat(
+            DETAILED_SUMMARY_SYSTEM,
+            f"Source material:\n\"\"\"\n{source}\n\"\"\"",
+            max_tokens=2600))
     # Too big for one pass: batch the section notes and write detailed prose for
     # each batch, then concatenate (sections are already in order).
     blocks = [b for b in source.split("\n\n") if b.strip()]
@@ -944,7 +957,8 @@ def _build_detailed(synth, source, single_limit):
                 f"This is part {i+1} of {len(batches)} of the source material, in "
                 f"order. Write the detailed summary for THIS part; it will be joined "
                 f"with the others. Do not repeat an overall intro each time.\n\n"
-                f"\"\"\"\n{batch}\n\"\"\"")
+                f"\"\"\"\n{batch}\n\"\"\"",
+                max_tokens=2600)
             parts.append(_clean_summary(piece))
         except Exception:
             continue

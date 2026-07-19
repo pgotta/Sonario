@@ -67,9 +67,9 @@ needed, then pulls the local models. **Or do it by hand:**
 
 The local provider options (hover each in the dropdown for details):
 
-- **Qwen3.5 9B (recommended)** — the default. One strong model (~5 GB) does every
+- **Qwen3.5 9B (recommended)** — the default. One strong model (~6.6 GB) does every
   step at full quality. Best all-round choice for a typical 8 GB gaming laptop.
-- **Qwen3.5 4B (lightweight)** — smallest/fastest (~2.5 GB). Good for weaker or
+- **Qwen3.5 4B (lightweight)** — smallest/fastest (~3.4 GB). Good for weaker or
   CPU-only machines, or when speed matters more than depth; lower quality on long
   or complex sources.
 - **Smart routing** — uses qwen3.5:4b for the heavy repetitive work and qwen3.5:9b
@@ -88,8 +88,7 @@ says *"the model isn't downloaded yet"*, run the `ollama pull` commands above.
 
 ## Groq cloud (optional, fast)
 
-Groq is a cloud engine that summarizes with **Qwen 3.6 27B** in seconds and
-handles long videos or whole books in one pass, thanks to its 128k-token context.
+Groq is a fast cloud engine using **Qwen 3.6 27B**. Sonario splits long videos, books, and document collections into rate-safe calls, then combines the results.
 It's the same engine as the Sonario mobile app. The trade-off: your text is sent
 to Groq's servers, so use a local model instead for anything sensitive.
 
@@ -115,7 +114,7 @@ Notes:
   right next to it - this is the same trade-off every desktop app makes when it
   offers to remember a key. It never leaves your machine. If you'd rather not
   store a key at all, leave the box unticked, or use the local models.
-- Groq has a generous free tier with per-minute rate limits. Sonario queues calls below the minute limits and follows Groq's reset headers. If the organization-wide daily quota is exhausted, switch to a local model or continue after reset.
+- Groq's free-tier baseline is 8K tokens/minute, 200K tokens/day, and 30 requests/minute across the whole organization. Sonario uses slightly lower working limits, follows Groq's reset headers, and shows a wait countdown. If the daily quota is exhausted, switch to a local model or continue after reset.
 - The model string (`qwen/qwen3.6-27b`) and endpoint
   (`https://api.groq.com/openai/v1`) are filled in for you; you only need the key.
 
