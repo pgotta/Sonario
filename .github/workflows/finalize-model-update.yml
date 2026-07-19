@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fix/qwen36-cloud-qwen35-local
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
