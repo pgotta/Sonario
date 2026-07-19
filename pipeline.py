@@ -16,6 +16,7 @@ import json
 import collections
 
 from extract import walk_folder, extract_text, file_hash
+from providers import ProviderDailyLimitError
 import modes as modes_mod
 
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "cache")
@@ -60,12 +61,13 @@ def map_document(provider, text, map_system=None):
     cap = MAX_CHARS_PER_DOC
     snippet = text[:cap]
     user = f"Document:\n\"\"\"\n{snippet}\n\"\"\""
-    note = fast.chat_json(sys_prompt, user)
+    note = fast.chat_json(sys_prompt, user, max_tokens=700)
     if not isinstance(note, dict):
         # one corrective retry with a blunt instruction
         note = fast.chat_json(
             sys_prompt,
             user + "\n\nReturn ONLY the JSON object. No other text.",
+            max_tokens=700,
         )
     if not isinstance(note, dict):
         raise RuntimeError("model did not return valid JSON")
@@ -131,6 +133,8 @@ def run_map(provider, files, progress=None, stop_flag=None, map_system=None):
 
         try:
             note = map_document(provider, text, map_system=map_system)
+        except ProviderDailyLimitError:
+            raise
         except Exception as e:
             skipped.append({"file": rel, "reason": f"map failed: {e}"})
             if progress:
@@ -229,7 +233,7 @@ def synthesize(provider, reduced, sample_gists=None, mode_cfg=None):
     )
     # Final report: quality-sensitive, runs once -> SYNTH model.
     synth = getattr(provider, "synth", provider)
-    return _clean_summary(synth.chat(system, user))
+    return _clean_summary(synth.chat(system, user, max_tokens=1600))
 
 
 PROMPTS_SYSTEM = (
@@ -345,7 +349,7 @@ def generate_prompts(provider, reduced, mode=None):
     )
     # User-facing follow-ups, runs once -> SYNTH model for quality.
     synth = getattr(provider, "synth", provider)
-    data = synth.chat_json(system, user)
+    data = synth.chat_json(system, user, max_tokens=1000)
     if not isinstance(data, dict):
         return None
     return _normalize_prompts(data)
@@ -557,7 +561,10 @@ def summarize_chapters(provider, chapters, progress=None):
         try:
             summary = _clean_summary(fast.chat(
                 CHAPTER_SUMMARY_SYSTEM,
-                f"Chapter title: {title}\n\nChapter text:\n\"\"\"\n{snippet}\n\"\"\""))
+                f"Chapter title: {title}\n\nChapter text:\n\"\"\"\n{snippet}\n\"\"\"",
+                max_tokens=900))
+        except ProviderDailyLimitError:
+            raise
         except Exception:
             summary = "_(This chapter could not be summarized.)_"
         out.append(f"## {title}\n\n{summary}\n")
@@ -747,7 +754,10 @@ def _final_combine(provider, joined, single_limit, chunk_size, progress=None):
     # 1) normal one-shot combine (final output -> SYNTH model)
     try:
         return synth.chat(REDUCE_SUMMARY_SYSTEM,
-                          f"Section notes, in order:\n\n{joined}")
+                          f"Section notes, in order:\n\n{joined}",
+                          max_tokens=1600)
+    except ProviderDailyLimitError:
+        raise
     except Exception:
         pass
 
@@ -762,7 +772,9 @@ def _final_combine(provider, joined, single_limit, chunk_size, progress=None):
     for i in range(0, len(blocks), batch_size):
         batch = "\n\n".join(blocks[i:i + batch_size])
         try:
-            partials.append(fast.chat(CHUNK_SYSTEM, batch))
+            partials.append(fast.chat(CHUNK_SYSTEM, batch, max_tokens=700))
+        except ProviderDailyLimitError:
+            raise
         except Exception:
             # keep the raw notes for this batch rather than dropping them
             partials.append(batch[:1500])
@@ -771,7 +783,10 @@ def _final_combine(provider, joined, single_limit, chunk_size, progress=None):
         small = small[:single_limit]
     try:
         return synth.chat(REDUCE_SUMMARY_SYSTEM,
-                          f"Section notes, in order:\n\n{small}")
+                          f"Section notes, in order:\n\n{small}",
+                          max_tokens=1600)
+    except ProviderDailyLimitError:
+        raise
     except Exception:
         pass
 
@@ -807,7 +822,7 @@ def summarize_text(provider, text, meta=None, progress=None):
     if len(text) <= single_limit:
         if progress:
             progress({"phase": "summarizing", "chunk": 1, "chunks": 1})
-        full = synth.chat(SUMMARY_SYSTEM, f"Source:\n\"\"\"\n{text}\n\"\"\"")
+        full = synth.chat(SUMMARY_SYSTEM, f"Source:\n\"\"\"\n{text}\n\"\"\"", max_tokens=1600)
         detail_source = text   # short doc: detailed can read the whole thing
     else:
         # Long source: map-reduce. Resilient to occasional provider failures.
@@ -821,8 +836,10 @@ def summarize_text(provider, text, meta=None, progress=None):
                 progress({"phase": "condensing", "chunk": i + 1, "chunks": len(chunks)})
             try:
                 note = fast.chat(CHUNK_SYSTEM, f"Section {i+1} of {len(chunks)}:\n"
-                                               f"\"\"\"\n{ch}\n\"\"\"")
+                                               f"\"\"\"\n{ch}\n\"\"\"", max_tokens=700)
                 notes.append(f"[Section {i+1}]\n{note}")
+            except ProviderDailyLimitError:
+                raise
             except Exception:
                 failed += 1
                 notes.append(f"[Section {i+1}]\n(this section could not be processed)")
@@ -855,7 +872,9 @@ def summarize_text(provider, text, meta=None, progress=None):
                     progress({"phase": "synthesizing", "reduce_step": condense_step,
                               "reduce_round": round_no})
                 try:
-                    batch_notes.append(fast.chat(CHUNK_SYSTEM, b))
+                    batch_notes.append(fast.chat(CHUNK_SYSTEM, b, max_tokens=700))
+                except ProviderDailyLimitError:
+                    raise
                 except Exception:
                     batch_notes.append(b[:1500])
             new_joined = "\n\n".join(batch_notes)
@@ -885,7 +904,7 @@ def summarize_text(provider, text, meta=None, progress=None):
     if progress:
         progress({"phase": "finalizing"})
     try:
-        bullets = _clean_summary(fast.chat(BULLETS_SYSTEM, full))
+        bullets = _clean_summary(fast.chat(BULLETS_SYSTEM, full, max_tokens=1100))
     except Exception:
         bullets = ""  # toggle just won't have a simplified view if this fails
 
@@ -916,8 +935,10 @@ def _build_detailed(synth, source, single_limit):
     # one-page limit before we have to batch.
     cap = max(single_limit, 16000)
     if len(source) <= cap:
-        return _clean_summary(synth.chat(DETAILED_SUMMARY_SYSTEM,
-                                         f"Source material:\n\"\"\"\n{source}\n\"\"\""))
+        return _clean_summary(synth.chat(
+            DETAILED_SUMMARY_SYSTEM,
+            f"Source material:\n\"\"\"\n{source}\n\"\"\"",
+            max_tokens=2600))
     # Too big for one pass: batch the section notes and write detailed prose for
     # each batch, then concatenate (sections are already in order).
     blocks = [b for b in source.split("\n\n") if b.strip()]
@@ -936,7 +957,8 @@ def _build_detailed(synth, source, single_limit):
                 f"This is part {i+1} of {len(batches)} of the source material, in "
                 f"order. Write the detailed summary for THIS part; it will be joined "
                 f"with the others. Do not repeat an overall intro each time.\n\n"
-                f"\"\"\"\n{batch}\n\"\"\"")
+                f"\"\"\"\n{batch}\n\"\"\"",
+                max_tokens=2600)
             parts.append(_clean_summary(piece))
         except Exception:
             continue
@@ -1081,7 +1103,7 @@ def answer_question(provider, question, context, extra=None):
         parts.append("Source excerpts:\n\"\"\"\n" + excerpts_text + "\n\"\"\"")
         parts.append("Question: " + question)
         synth = getattr(provider, "synth", provider)
-        ans = _clean_summary(synth.chat(ASK_SYSTEM, "\n\n".join(parts)))
+        ans = _clean_summary(synth.chat(ASK_SYSTEM, "\n\n".join(parts), max_tokens=1400))
         return {"answer": ans, "citations": []}
 
     # Build labelled excerpts [1], [2], ... and a citation map back to positions.
@@ -1104,7 +1126,7 @@ def answer_question(provider, question, context, extra=None):
                  + "\n\n".join(labelled))
     parts.append("Question: " + question)
     synth = getattr(provider, "synth", provider)
-    answer = _clean_summary(synth.chat(ASK_SYSTEM, "\n\n".join(parts)))
+    answer = _clean_summary(synth.chat(ASK_SYSTEM, "\n\n".join(parts), max_tokens=1400))
 
     # Only keep citations the model actually used, so the UI doesn't show dangling
     # sources. If it cited nothing (rare), return the answer without citations.

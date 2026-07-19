@@ -15,10 +15,10 @@ download: a Word doc, PDF, EPUB (whole book), text file, a YouTube link, or a we
 page.
 
 It runs as a small, **local-first** web app at `http://127.0.0.1:5005`. You bring
-your own AI provider; the default, **Qwen3 8B**, runs fully on your own machine via
+your own AI provider; the default, **Qwen3.5 9B**, runs fully on your own machine via
 [Ollama](https://ollama.com) — no account, no API key, and nothing leaves your
 computer. It's recommended for a typical gaming laptop (8GB GPU). If you'd rather
-use a fast cloud model, Groq (Llama 4 Scout) is one dropdown click away — the same
+use a fast cloud model, Groq (Qwen 3.6 27B) is one dropdown click away — the same
 free engine as the Sonario mobile app (bring your own free key).
 
 <div align="center">
@@ -164,33 +164,32 @@ any provider in the dropdown for a short description of when to use it.
 
 | Provider | Cost | Where it runs | Needs |
 |---|---|---|---|
-| **Qwen3 8B** *(recommended, default)* | Free | **Fully local** on your GPU | [Ollama](https://ollama.com) + `setup_all.bat` |
-| **Smart routing** | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `setup_all.bat` (phi4-mini + qwen3:8b) |
-| **Phi-4-mini** *(lightweight)* | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `ollama pull phi4-mini` |
+| **Qwen3.5 9B** *(recommended, default)* | Free | **Fully local** on your GPU | [Ollama](https://ollama.com) + `setup_all.bat` |
+| **Smart routing** | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `setup_all.bat` (qwen3.5:4b + qwen3.5:9b) |
+| **Qwen3.5 4B** *(lightweight)* | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `ollama pull qwen3.5:4b` |
 | **Ollama** *(any model)* | Free | Fully local on your machine | [Ollama](https://ollama.com) and any pulled model |
-| **Groq — Llama 4 Scout** | Free (bring your own key) | Cloud | Free API key from console.groq.com |
+| **Groq - Qwen 3.6 27B** | Free (bring your own key) | Cloud | Free API key from console.groq.com |
 
 All speak the OpenAI-compatible format, so switching is just a dropdown. Advanced
 users can add their own in [`models.json`](#adding-providers).
 
-> **Qwen3 8B (the default).** One strong local model that does every step at full
+> **Qwen3.5 9B (the default).** About 6.6 GB. One strong local model that does every step at full
 > quality. It's the best all-round choice for a typical 8GB gaming laptop — fully
 > private, no account, can't be rate-limited. Run **`setup_all.bat`** once.
 
 > **Smart routing (optional).** Splits the work between two local models: the
-> lightweight **phi4-mini** for the heavy repetitive parts (per-chunk summaries,
-> classification) and **qwen3:8b** for the final write-up. This is lighter on very
-> long jobs, but the chunk-level work is lower quality than running Qwen3 8B for
+> lightweight **qwen3.5:4b** for the heavy repetitive parts (per-chunk summaries,
+> classification) and **qwen3.5:9b** for the final write-up. This is lighter on very
+> long jobs, but the chunk-level work is lower quality than running Qwen3.5 9B for
 > everything, and on an 8GB GPU the two models can't both stay resident so Ollama
 > swaps between them. Use it if long-job speed matters more than maximum quality.
 
-> **Phi-4-mini (lightweight).** The smallest, fastest local model. Best for weaker
+> **Qwen3.5 4B (lightweight).** About 3.4 GB. The smallest, fastest local model. Best for weaker
 > or CPU-only machines, or when speed matters more than depth. Lower quality on
 > long or complex sources.
 
-> **Groq — Llama 4 Scout (cloud).** The fast path, and the same engine as the
-> Sonario mobile app. Summarizes long videos and whole books in one pass (128k
-> context) in seconds, with no local GPU load. Free to use with your own API key
+> **Groq - Qwen 3.6 27B (cloud).** The fast path, and the same engine as the
+> Sonario mobile app. It runs much faster than local inference and Sonario splits long sources into rate-safe calls. There is no local GPU load. Free to use with your own API key
 > from [console.groq.com](https://console.groq.com) (no credit card). Tick
 > **"Remember this key on this PC"** and you only paste it once - it's saved
 > locally (in plain text, in the gitignored `credentials/` folder) and filled in
@@ -199,7 +198,7 @@ users can add their own in [`models.json`](#adding-providers).
 > key setup.
 
 > **A note on privacy.** Sonario runs locally, but where your *text* goes depends
-> on the provider. With the **local** models (Qwen3 8B, Phi-4-mini, smart routing,
+> on the provider. With the **local** models (Qwen3.5 9B, Qwen3.5 4B, smart routing,
 > or any Ollama model) everything stays on your machine. With a **cloud** provider
 > (Groq), the text of your documents is sent to that provider to generate
 > the result. If a source is sensitive, use a local model. Sonario shows a heads-up
@@ -247,14 +246,10 @@ What this means for the providers:
 
 - **Cloud provider** (Groq) doesn't depend on
 your hardware at all — the work happens on their servers. Any modern PC is fine.
-- **Local default (smart routing: phi4-mini + qwen3:8b)** needs ~8 GB total for the
-two models. On the 8 GB GPU above they can't both stay resident, so Ollama swaps
-between them as the job moves between roles — it works, but adds a short pause on
-each swap, so long jobs aren't instant. A GPU with more VRAM (12 GB+) would hold
-both at once and run much faster.
-- **Want to avoid swapping?** Pick a single-model local provider (Qwen3 8B on its
-own, or the lighter Phi-4-mini) so only one model loads — no swap pauses, at the
-cost of either depth (Phi-4-mini) or the fast/slow split.
+- **Optional smart routing (qwen3.5:4b + qwen3.5:9b)** downloads about 10 GB total. On the 8 GB reference GPU, Ollama swaps models between stages, which works but adds a short pause. A GPU with 16 GB or more VRAM is a safer target for keeping both loaded together.
+- **Want to avoid swapping?** Pick a single-model local provider (Qwen3.5 9B on its
+own, or the lighter Qwen3.5 4B) so only one model loads — no swap pauses, at the
+cost of either depth (Qwen3.5 4B) or the fast/slow split.
 
 ## Project layout
 
@@ -286,3 +281,12 @@ MIT &copy; pgotta. See [LICENSE](LICENSE).
 Local models run through [Ollama](https://ollama.com) and the cloud option
 (Groq) is a third-party service with its own license and terms;
 Sonario just talks to it over the standard OpenAI-compatible API.
+
+
+## Qwen 3.6 cloud pacing
+
+The Groq preset is pinned to `qwen/qwen3.6-27b`; old Scout settings cannot be
+restored. Sonario uses non-thinking mode, task-sized output budgets, conservative
+limits below Groq's 8K TPM / 200K TPD / 30 RPM free-tier baseline, and live reset
+headers. It waits between calls rather than repeatedly returning HTTP 429. Daily
+limits are organization-wide; use Qwen3.5 9B locally for quota-free long jobs.

@@ -3,7 +3,7 @@ app.py — Anchors Aweigh server.
 
 Single-user local Flask server + single-file SPA. Runs one analysis job at a
 time in a background thread; the UI polls /status for live progress. Provider
-defaults to a local Ollama model (Qwen3 8B). Source is a Windows folder path or
+defaults to a local Ollama model (Qwen3.5 9B). Source is a Windows folder path or
 a Google Drive folder link.
 
 Behavioral rules:
@@ -153,7 +153,15 @@ def log(msg):
     JOB["log"] = JOB["log"][-200:]
 
 
-def _build_provider(cfg):
+def _job_rate_wait(seconds):
+    prefix = "Groq rate window:"
+    message = (f"{prefix} waiting {seconds}s before the next call…" if seconds > 0
+               else f"{prefix} ready; continuing.")
+    if JOB["log"] and JOB["log"][-1].startswith(prefix): JOB["log"][-1] = message
+    else: log(message)
+
+
+def _build_provider(cfg, on_wait=None):
     """Build the provider the pipeline will use.
 
     Returns a RoutingProvider in all cases (via providers.as_router), so the
@@ -178,6 +186,7 @@ def _build_provider(cfg):
         base_url=cfg.get("base_url") or None,
         model=cfg.get("model") or None,
         api_key=api_key or None,
+        on_wait=on_wait,
     )
 
     # Decide the fast/helper model. Priority: explicit UI value, then the preset's
@@ -189,6 +198,7 @@ def _build_provider(cfg):
             base_url=cfg.get("base_url") or None,
             model=fast_model,
             api_key=api_key or None,
+            on_wait=on_wait,
         )
         return providers.RoutingProvider(synth=synth, fast=fast)
 
@@ -202,7 +212,7 @@ def run_job(cfg):
                    mode=None, mode_label="", followup_labels=None,
                    md_path=None, pdf_path=None, skipped=[], log=[],
                    files=None, _raw_cache=None)
-        provider = _build_provider(cfg)
+        provider = _build_provider(cfg, on_wait=_job_rate_wait)
 
         # ---- resolve source(s) to a combined list of files ----
         # The UI sends booleans use_folder / use_gdrive so either or BOTH can run.
@@ -651,6 +661,13 @@ SUM = {
 _sum_lock = threading.Lock()
 
 
+def _summary_rate_wait(seconds):
+    if seconds > 0:
+        SUM["stage"] = "rate_wait"; SUM["detail"] = f"Groq rate window: continuing in {seconds}s…"
+    elif SUM.get("stage") == "rate_wait":
+        SUM["stage"] = SUM.get("phase") or "summarizing"; SUM["detail"] = "Groq rate window ready; continuing…"
+
+
 def _fmt_eta(sec):
     """Human ETA string from seconds remaining."""
     if sec is None or sec < 0:
@@ -727,7 +744,7 @@ def run_summary(cfg):
                    bullets_md=None,
                    is_youtube=False, video_id=None, segments=None,
                    cur=0, total=0, phase="", started=0.0, eta_sec=None, reduce_step=0)
-        provider = _build_provider(cfg)
+        provider = _build_provider(cfg, on_wait=_summary_rate_wait)
         intype = cfg.get("input_type")  # 'file' | 'link'
 
         if intype == "file":
