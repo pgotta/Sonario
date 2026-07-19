@@ -1,0 +1,46 @@
+name: Package latest Sonario source
+
+on:
+  push:
+    branches:
+      - artifact/latest-source-zip
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Build clean ZIP
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/Sonario-latest
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='venv/' \
+            --exclude='__pycache__/' \
+            --exclude='cache/*.json' \
+            --exclude='output/*' \
+            --exclude='history/' \
+            --exclude='credentials/credentials.json' \
+            --exclude='credentials/token.json' \
+            --exclude='credentials/api_keys.json' \
+            --exclude='credentials/groq_usage.json' \
+            ./ /tmp/Sonario-latest/
+          cd /tmp
+          zip -qr "$GITHUB_WORKSPACE/Sonario-latest.zip" Sonario-latest
+          unzip -tq "$GITHUB_WORKSPACE/Sonario-latest.zip"
+
+      - name: Upload ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sonario-latest-source
+          path: Sonario-latest.zip
+          if-no-files-found: error
+          retention-days: 3
