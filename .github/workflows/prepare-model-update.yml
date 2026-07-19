@@ -1,0 +1,39 @@
+name: Prepare model update workspace
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  package-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pull request branch
+        uses: actions/checkout@v4
+
+      - name: Create source archive
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/Sonario
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.gradle/' \
+            --exclude='cache/' \
+            --exclude='output/' \
+            --exclude='history/' \
+            --exclude='credentials/' \
+            ./ /tmp/Sonario/
+          cd /tmp
+          zip -qr "$GITHUB_WORKSPACE/Sonario-source.zip" Sonario
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sonario-source
+          path: Sonario-source.zip
+          if-no-files-found: error
+          retention-days: 3
