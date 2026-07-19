@@ -17,6 +17,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Verify Windows launchers are packaged
+        shell: python
+        run: |
+          from pathlib import Path
+
+          required = {
+              "setup_all.bat": ["qwen3.5:9b", "qwen3.5:4b", "requirements.txt"],
+              "run.bat": ["venv\\Scripts\\python.exe", "python app.py"],
+          }
+          for name, markers in required.items():
+              path = Path(name)
+              assert path.is_file(), f"Missing packaged launcher: {name}"
+              text = path.read_text(encoding="utf-8")
+              for marker in markers:
+                  assert marker in text, f"{name} is missing expected content: {marker}"
       - run: python -m pip install --disable-pip-version-check requests
       - run: python -m compileall -q app.py providers.py pipeline.py
       - run: python -m unittest discover -s tests -v
