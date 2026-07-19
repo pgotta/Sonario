@@ -1,11 +1,9 @@
 name: Apply final Sonario model patch
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/qwen36-cloud-qwen35-local
-    paths:
-      - tools/final_model_update.patch
+      - main
 
 permissions:
   contents: write
