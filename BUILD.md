@@ -32,7 +32,7 @@ to use Sonario.
 
 | Script | When to run it | What it does |
 |---|---|---|
-| **`setup_all.bat`** | Once, first (safe to re-run) | Everything: finds Python (fixes PATH if needed), creates the venv, installs Python deps + Git + Tesseract + Poppler, installs Ollama, pulls the local models (qwen3:8b + phi4-mini) |
+| **`setup_all.bat`** | Once, first (safe to re-run) | Everything: finds Python (fixes PATH if needed), creates the venv, installs Python deps + Git + Tesseract + Poppler, installs Ollama, pulls the local models (qwen3.5:9b + qwen3.5:4b) |
 | **`run.bat`** | Every time | Starts the app at `http://127.0.0.1:5005` |
 | **`gdrive_setup.bat`** | Only for Google Drive | Opens the Google Cloud pages, verifies `credentials.json`, tests the connection |
 
@@ -58,21 +58,21 @@ needed, then pulls the local models. **Or do it by hand:**
    background service and starts on its own after install.
 2. Open a terminal (Command Prompt or PowerShell) and run:
    ```
-   ollama pull qwen3:8b
-   ollama pull phi4-mini
+   ollama pull qwen3.5:9b
+   ollama pull qwen3.5:4b
    ```
    Downloaded once and cached locally.
-3. In Sonario, the **Qwen3 8B (recommended)** provider is already selected. Click
+3. In Sonario, the **Qwen3.5 9B (recommended)** provider is already selected. Click
    **Test connection** to confirm Ollama is reachable.
 
 The local provider options (hover each in the dropdown for details):
 
-- **Qwen3 8B (recommended)** — the default. One strong model (~5 GB) does every
+- **Qwen3.5 9B (recommended)** — the default. One strong model (~5 GB) does every
   step at full quality. Best all-round choice for a typical 8 GB gaming laptop.
-- **Phi-4-mini (lightweight)** — smallest/fastest (~2.5 GB). Good for weaker or
+- **Qwen3.5 4B (lightweight)** — smallest/fastest (~2.5 GB). Good for weaker or
   CPU-only machines, or when speed matters more than depth; lower quality on long
   or complex sources.
-- **Smart routing** — uses phi4-mini for the heavy repetitive work and qwen3:8b
+- **Smart routing** — uses qwen3.5:4b for the heavy repetitive work and qwen3.5:9b
   for the final write-up. Lighter on very long jobs, but the chunk-level work is
   lower quality, and on an 8 GB GPU the two models can't both stay resident so
   Ollama swaps between them (a short pause on each swap). Needs both models pulled.
@@ -88,7 +88,7 @@ says *"the model isn't downloaded yet"*, run the `ollama pull` commands above.
 
 ## Groq cloud (optional, fast)
 
-Groq is a cloud engine that summarizes with **Llama 4 Scout** in seconds and
+Groq is a cloud engine that summarizes with **Qwen 3.6 27B** in seconds and
 handles long videos or whole books in one pass, thanks to its 128k-token context.
 It's the same engine as the Sonario mobile app. The trade-off: your text is sent
 to Groq's servers, so use a local model instead for anything sensitive.
@@ -99,7 +99,7 @@ Setup (about a minute):
    card).
 2. Open **API Keys**, click **Create API Key**, and copy it. You only see the full
    key once, so copy it now.
-3. In Sonario, pick **Groq - Llama 4 Scout** from the provider dropdown, paste the
+3. In Sonario, pick **Groq - Qwen 3.6 27B** from the provider dropdown, paste the
    key into the **API key** box, and click **Test connection**.
 
 Notes:
@@ -115,9 +115,8 @@ Notes:
   right next to it - this is the same trade-off every desktop app makes when it
   offers to remember a key. It never leaves your machine. If you'd rather not
   store a key at all, leave the box unticked, or use the local models.
-- Groq has a generous free tier with per-minute rate limits. Very large jobs may
-  briefly hit those limits; if so, wait a moment and retry, or use a local model.
-- The model string (`meta-llama/llama-4-scout-17b-16e-instruct`) and endpoint
+- Groq has a generous free tier with per-minute rate limits. Sonario queues calls below the minute limits and follows Groq's reset headers. If the organization-wide daily quota is exhausted, switch to a local model or continue after reset.
+- The model string (`qwen/qwen3.6-27b`) and endpoint
   (`https://api.groq.com/openai/v1`) are filled in for you; you only need the key.
 
 ## OCR tools (Tesseract and Poppler)
@@ -290,7 +289,7 @@ REM  1) Finds Python (python / py launcher / common install paths). If Python is
 REM     installed but not on PATH, it ADDS it to your PATH automatically.
 REM  2) Installs Python packages from requirements.txt.
 REM  3) Installs Git, Tesseract OCR, Poppler via winget (skips ones present).
-REM  4) Installs Ollama if needed and pulls the models (qwen3:8b + phi4-mini).
+REM  4) Installs Ollama if needed and pulls the models (qwen3.5:9b + qwen3.5:4b).
 REM  5) Done -> run  run.bat  to start Sonario.
 REM
 REM  Runs as your normal user so it sees YOUR Python. winget asks for admin on
@@ -458,10 +457,10 @@ echo       script (it will skip finished steps and just pull the models).
 goto :finish
 
 :pull_models
-echo   Pulling phi4-mini (fast helper, ~2.5GB; skipped if already present)...
-ollama pull phi4-mini
-echo   Pulling qwen3:8b (main model, ~5GB; skipped if already present)...
-ollama pull qwen3:8b
+echo   Pulling qwen3.5:4b (fast helper, ~3.4GB; skipped if already present)...
+ollama pull qwen3.5:4b
+echo   Pulling qwen3.5:9b (main model, ~6.6GB; skipped if already present)...
+ollama pull qwen3.5:9b
 echo   [OK] Local models ready.
 
 :finish
@@ -469,7 +468,7 @@ echo.
 echo   [5/5] All set.
 echo   ====================================================================
 echo    Sonario is installed. Double-click  run.bat  to start it.
-echo    - Default is Qwen3 8B (local, private). Just run and go.
+echo    - Default is Qwen3.5 9B (local, private). Just run and go.
 echo    - Fast cloud option: pick Groq in the app, paste a free key from
 echo      console.groq.com (no install needed).
 echo    - Google Drive is optional: run  gdrive_setup.bat.

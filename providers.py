@@ -5,65 +5,68 @@ Because Ollama and Groq (OpenAI-compatible endpoint) both speak the OpenAI
 /v1/chat/completions shape, a single client works for all. Switching provider =
 swapping base_url + model + key. No forked code.
 
-The default is a local Ollama model (Qwen3 8B). For cloud providers with rate
-limits, calls are paced via the throttle here.
+The default is Qwen3.5 9B through Ollama. Groq is pinned to Qwen 3.6 27B and
+paced below its free-tier token and request limits.
 """
 
 import time
 import json
 import threading
+import os
+import re
+import math
+from collections import deque
+from datetime import datetime, timezone
+from pathlib import Path
 
 import requests
 
 
 # Built-in provider presets. base_url points at an OpenAI-compatible endpoint.
 PROVIDERS = {
+    # Legacy IDs are retained so old browser state still selects the right option.
     "local-qwen8b": {
-        "label": "Qwen3 8B (recommended)",
+        "label": "Qwen3.5 9B (recommended)",
         "base_url": "http://localhost:11434/v1",
-        "model": "qwen3:8b",
-        "needs_key": False,
-        "min_interval": 0.0,
-        "tip": "Best all-round choice for a typical gaming laptop (8GB GPU). One strong local model does every step at full quality. ~5GB.",
-        "note": "Recommended. One local model for everything via Ollama (~5GB), full quality on every step. Good on an 8GB GPU. Run ollama_setup.bat (or  ollama pull qwen3:8b  ) first.",
+        "model": "qwen3.5:9b",
+        "needs_key": False, "min_interval": 0.0,
+        "reasoning_effort": "none", "max_tokens": 2048,
+        "tip": "Best overall local choice for an 8GB gaming GPU. Strong summaries, writing, comprehension, and Q&A. About 6.6GB.",
+        "note": "Recommended. Qwen3.5 9B is the strongest practical local fit for the reference RTX 5060 Laptop GPU. Run setup_all.bat or ollama pull qwen3.5:9b.",
     },
     "local-smart": {
-        "label": "Smart routing (fast + quality models)",
+        "label": "Smart routing (Qwen3.5 4B + 9B)",
         "base_url": "http://localhost:11434/v1",
-        "model": "qwen3:8b",            # synthesis model (final reports/summaries)
-        "fast_model": "phi4-mini",      # helper model (chunks, classify, JSON)
-        "needs_key": False,
-        "min_interval": 0.0,
-        "routed": True,                 # signals app.py to build a RoutingProvider
-        "tip": "Uses the lightweight model for bulk work and Qwen3 8B for the final write-up. Lighter on long jobs, but the chunk work is lower quality and it swaps models on an 8GB GPU.",
-        "note": "Uses two models on your GPU via Ollama: a fast model (phi4-mini) for the heavy repetitive work and a stronger model (qwen3:8b) for the final write-up. Lighter on very long jobs, but chunk-level quality is lower than running Qwen3 8B for everything. Run ollama_setup.bat first (installs both, ~8GB total).",
+        "model": "qwen3.5:9b", "fast_model": "qwen3.5:4b",
+        "needs_key": False, "min_interval": 0.0, "routed": True,
+        "reasoning_effort": "none", "max_tokens": 2048,
+        "tip": "Qwen3.5 4B handles repetitive chunks and 9B writes final output. Faster bulk work, but an 8GB GPU swaps models.",
+        "note": "Uses Qwen3.5 4B for bulk work and Qwen3.5 9B for final reports and answers. About 10GB total, so an 8GB GPU swaps them between stages.",
     },
     "local-phi4mini": {
-        "label": "Phi-4-mini (lightweight)",
+        "label": "Qwen3.5 4B (lightweight)",
         "base_url": "http://localhost:11434/v1",
-        "model": "phi4-mini",
-        "needs_key": False,
-        "min_interval": 0.0,
-        "tip": "Smallest and fastest. Good for weaker or CPU-only machines, or when speed matters more than depth. Lower quality on long or complex sources. ~2.5GB.",
-        "note": "Smallest/fastest local option via Ollama (~2.5GB). Best for weaker or CPU-only machines, or when speed matters more than depth. Run  ollama pull phi4-mini  first.",
+        "model": "qwen3.5:4b",
+        "needs_key": False, "min_interval": 0.0,
+        "reasoning_effort": "none", "max_tokens": 2048,
+        "tip": "Fastest built-in local option. Good for quick summaries and extraction; less nuanced than 9B. About 3.4GB.",
+        "note": "Small and fast local option. Run ollama pull qwen3.5:4b. Use 9B when depth and subtlety matter.",
     },
     "ollama": {
         "label": "Ollama (any local model)",
-        "base_url": "http://localhost:11434/v1",
-        "model": "llama3.1",
-        "needs_key": False,
-        "min_interval": 0.0,   # local, parallel-safe, no pacing needed
-        "tip": "Advanced: type the name of any model you've pulled with Ollama (e.g. qwen3:14b, llama3.1) in the Model box.",
-        "note": "Free & fully private. Requires Ollama installed and a pulled model. Type any pulled model name in the Model box.",
+        "base_url": "http://localhost:11434/v1", "model": "qwen3.5:9b",
+        "needs_key": False, "min_interval": 0.0,
+        "tip": "Advanced: use any pulled Ollama model. Models much larger than 9B may spill into RAM on an 8GB GPU.",
+        "note": "Free and fully private. Requires Ollama and a pulled model.",
     },
     "groq": {
-        "label": "Groq - Llama 4 Scout (cloud, free key)",
+        "label": "Groq - Qwen 3.6 27B (cloud)",
         "base_url": "https://api.groq.com/openai/v1",
-        "model": "meta-llama/llama-4-scout-17b-16e-instruct",
-        "needs_key": True,
-        "min_interval": 0.0,
-        "tip": "Cloud, very fast. Summarizes big documents in one pass with Llama 4 Scout (128k context). Free API key from console.groq.com - no credit card. Your text is sent to Groq's servers.",
-        "note": "Fast cloud engine, same as the Sonario mobile app. Get a free API key at console.groq.com (no credit card), paste it above. Handles long videos and books in one pass. Your text is sent to Groq.",
+        "model": "qwen/qwen3.6-27b",
+        "needs_key": True, "min_interval": 0.0,
+        "reasoning_effort": "none", "max_tokens": 2048,
+        "tip": "Very fast cloud model. Sonario waits for Groq token windows instead of repeatedly returning 429. Your text is sent to Groq.",
+        "note": "Free-tier baseline: 8K tokens/minute, 200K/day, and 30 requests/minute across the Groq organization. Sonario leaves safety headroom and follows reset headers.",
     },
 }
 
@@ -100,6 +103,145 @@ def _load_user_providers():
 _load_user_providers()
 
 
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_MODEL = "qwen/qwen3.6-27b"
+
+
+class ProviderDailyLimitError(RuntimeError):
+    pass
+
+
+def _reset_seconds(value):
+    if not value:
+        return None
+    text = str(value).strip().lower().replace(" ", "")
+    try:
+        return max(0.0, float(text))
+    except ValueError:
+        pass
+    m = re.fullmatch(r"(?:(\d+(?:\.\d+)?)h)?(?:(\d+(?:\.\d+)?)m)?(?:(\d+(?:\.\d+)?)s)?", text)
+    if not m or not any(m.groups()):
+        return None
+    return float(m.group(1) or 0) * 3600 + float(m.group(2) or 0) * 60 + float(m.group(3) or 0)
+
+
+class GroqRateLimiter:
+    """Shared, conservative pacing for Groq Qwen 3.6 free-tier limits."""
+    TPM, TPD, RPM = 7600, 195000, 28
+    WINDOW = 60.0
+    MAX_REQUEST = 7200
+
+    def __init__(self):
+        self.lock = threading.RLock()
+        self.tokens = deque()
+        self.requests = deque()
+        self.server_remaining = None
+        self.server_reset = 0.0
+        self.blocked_until = 0.0
+        self.usage_path = os.path.join(os.path.dirname(__file__), "credentials", "groq_usage.json")
+        self.day = ""
+        self.daily = 0
+        self._load_day()
+
+    @staticmethod
+    def estimate(system, user, output_tokens):
+        return max(1, math.ceil((len(system or "") + len(user or "")) / 4) + 120 + output_tokens)
+
+    def _today(self):
+        return datetime.now(timezone.utc).date().isoformat()
+
+    def _load_day(self):
+        self.day, self.daily = self._today(), 0
+        try:
+            data = json.loads(Path(self.usage_path).read_text(encoding="utf-8"))
+            if data.get("date") == self.day:
+                self.daily = max(0, int(data.get("used", 0)))
+        except Exception:
+            pass
+
+    def _save(self):
+        try:
+            os.makedirs(os.path.dirname(self.usage_path), exist_ok=True)
+            Path(self.usage_path).write_text(json.dumps({"date": self.day, "used": self.daily}), encoding="utf-8")
+        except OSError:
+            pass
+
+    def _refresh(self):
+        if self.day != self._today():
+            self.day, self.daily = self._today(), 0
+            self._save()
+
+    def _trim(self, now):
+        while self.tokens and now - self.tokens[0][0] >= self.WINDOW:
+            self.tokens.popleft()
+        while self.requests and now - self.requests[0] >= self.WINDOW:
+            self.requests.popleft()
+        if self.server_reset <= now:
+            self.server_remaining, self.server_reset = None, 0.0
+
+    def acquire(self, amount, on_wait=None):
+        amount = int(amount)
+        if amount > self.MAX_REQUEST:
+            raise RuntimeError("This Groq request is too large for the free-tier minute budget; Sonario should have split it automatically.")
+        waited = False
+        while True:
+            with self.lock:
+                self._refresh()
+                if self.daily + amount > self.TPD:
+                    raise ProviderDailyLimitError("Groq's Qwen 3.6 daily quota is exhausted. Completed Analyze Collection documents are cached. Continue after reset or use a local Ollama model.")
+                now = time.time(); self._trim(now); wait = 0.0
+                used = sum(x[1] for x in self.tokens)
+                if used + amount > self.TPM and self.tokens:
+                    need = used + amount - self.TPM
+                    for stamp, spent in self.tokens:
+                        need -= spent
+                        if need <= 0:
+                            wait = max(wait, stamp + self.WINDOW - now); break
+                if len(self.requests) >= self.RPM:
+                    wait = max(wait, self.requests[0] + self.WINDOW - now)
+                if self.blocked_until > now:
+                    wait = max(wait, self.blocked_until - now)
+                if self.server_remaining is not None and amount > self.server_remaining and self.server_reset > now:
+                    wait = max(wait, self.server_reset - now)
+                if wait <= 0:
+                    self.tokens.append([now, amount]); self.requests.append(now)
+                    self.daily += amount; self._save(); break
+            waited = True
+            if on_wait: on_wait(max(1, math.ceil(wait)))
+            time.sleep(min(wait, 1.0))
+        if waited and on_wait: on_wait(0)
+        return amount
+
+    def settle(self, reserved, actual):
+        actual = max(0, int(actual if actual is not None else reserved))
+        with self.lock:
+            self._refresh()
+            if self.tokens:
+                self.tokens[-1][1] = actual
+            self.daily = max(0, self.daily - reserved + actual); self._save()
+
+    def refund(self, reserved):
+        with self.lock:
+            self._refresh(); self.daily = max(0, self.daily - reserved); self._save()
+
+    def headers(self, headers):
+        try:
+            remaining = int(float(headers.get("x-ratelimit-remaining-tokens")))
+            reset = _reset_seconds(headers.get("x-ratelimit-reset-tokens"))
+        except (TypeError, ValueError):
+            return
+        if reset:
+            with self.lock:
+                self.server_remaining = max(0, remaining); self.server_reset = time.time() + reset + .25
+
+    def backoff(self, seconds):
+        with self.lock:
+            self.blocked_until = max(self.blocked_until, time.time() + max(.25, seconds))
+
+
+_GROQ_LIMITER = GroqRateLimiter()
+
+
 class Throttle:
     """Enforces a minimum interval between calls, thread-safe."""
 
@@ -120,71 +262,74 @@ class Throttle:
 
 
 class LLMProvider:
-    """A configured, OpenAI-compatible chat client."""
+    """A configured OpenAI-compatible chat client."""
 
     def __init__(self, provider_id="local-qwen8b", base_url=None, model=None,
-                 api_key=None, min_interval=None):
+                 api_key=None, min_interval=None, on_wait=None):
         preset = PROVIDERS.get(provider_id, PROVIDERS["local-qwen8b"])
         self.provider_id = provider_id
-        self.base_url = (base_url or preset["base_url"]).rstrip("/")
-        self.model = model or preset["model"]
+        if provider_id == "groq":
+            self.base_url, self.model = GROQ_BASE_URL, GROQ_MODEL
+        else:
+            self.base_url = (base_url or preset["base_url"]).rstrip("/")
+            self.model = model or preset["model"]
         self.api_key = api_key or "unused"
-        interval = preset["min_interval"] if min_interval is None else min_interval
-        self.throttle = Throttle(interval)
+        self.throttle = Throttle(preset["min_interval"] if min_interval is None else min_interval)
+        self.reasoning_effort = preset.get("reasoning_effort")
+        self.default_max_tokens = int(preset.get("max_tokens", 0) or 0)
+        self.on_wait = on_wait
 
-    def chat(self, system, user, max_retries=4, timeout=180):
-        """One chat completion. Returns the assistant text. Retries with backoff."""
+    def chat(self, system, user, max_retries=4, timeout=180, max_tokens=None):
         url = f"{self.base_url}/chat/completions"
         headers = {"Content-Type": "application/json"}
         if self.api_key and self.api_key != "unused":
             headers["Authorization"] = f"Bearer {self.api_key}"
-
-        messages = []
-        if system:
-            messages.append({"role": "system", "content": system})
+        output = self.default_max_tokens if max_tokens is None else int(max_tokens)
+        messages = ([{"role": "system", "content": system}] if system else [])
         messages.append({"role": "user", "content": user})
         payload = {"model": self.model, "messages": messages, "stream": False}
-
-        # Local models (Ollama, port 11434) can be much slower than cloud, especially
-        # a 14B reasoning model spilling into system RAM on an 8GB GPU and emitting
-        # long <think> traces. Give them a generous ceiling so a slow-but-valid
-        # response isn't killed as a timeout. Only bump the default; respect an
-        # explicit shorter timeout (e.g. the quick connection test).
-        if timeout == 180 and ("11434" in self.base_url or "localhost:11434" in url):
-            timeout = 900
-
-        last_err = None
+        if output: payload["max_tokens"] = output
+        if self.reasoning_effort: payload["reasoning_effort"] = self.reasoning_effort
+        if "11434" in self.base_url and timeout == 180: timeout = 900
+        is_groq = self.provider_id == "groq"
+        estimate = _GROQ_LIMITER.estimate(system, user, output or 2048) if is_groq else 0
+        last = None
         for attempt in range(max_retries):
-            self.throttle.wait()
+            self.throttle.wait(); reserved = None
+            if is_groq: reserved = _GROQ_LIMITER.acquire(estimate, self.on_wait)
             try:
                 r = requests.post(url, headers=headers, json=payload, timeout=timeout)
-                if r.status_code == 200:
-                    data = r.json()
-                    content = data["choices"][0]["message"]["content"]
-                    return _strip_dashes(_strip_think(content))
-                # 429/5xx are transient (esp. Copilot 502 under load) — back off
-                if r.status_code in (429, 500, 502, 503, 504):
-                    last_err = f"HTTP {r.status_code}: {r.text[:200]}"
-                    # "too-many-messages" is a cumulative session ceiling, not a
-                    # transient blip: hammering the same oversized call won't help.
-                    # Fail fast so the caller's recovery path (smaller batches /
-                    # local stitch) can take over instead of burning ~60s on
-                    # identical retries.
-                    if "too-many-messages" in r.text:
-                        raise RuntimeError(last_err)
-                    time.sleep(min(2 ** attempt * 2, 30))
+            except requests.RequestException as exc:
+                if reserved: _GROQ_LIMITER.refund(reserved)
+                last = str(exc)
+                if attempt + 1 < max_retries:
+                    delay = min(2 ** attempt * 2, 30)
+                    if is_groq: _GROQ_LIMITER.backoff(delay)
+                    else: time.sleep(delay)
                     continue
-                # other codes are likely fatal (bad key, bad model) — surface them
-                raise RuntimeError(f"HTTP {r.status_code}: {r.text[:300]}")
-            except requests.RequestException as e:
-                last_err = str(e)
-                time.sleep(min(2 ** attempt * 2, 30))
-        raise RuntimeError(f"LLM call failed after {max_retries} attempts. {last_err}")
+                break
+            if is_groq: _GROQ_LIMITER.headers(r.headers)
+            if r.status_code == 200:
+                data = r.json()
+                if reserved: _GROQ_LIMITER.settle(reserved, (data.get("usage") or {}).get("total_tokens"))
+                return _strip_dashes(_strip_think(data["choices"][0]["message"]["content"]))
+            if reserved: _GROQ_LIMITER.refund(reserved)
+            last = f"HTTP {r.status_code}: {r.text[:300]}"
+            low = r.text.lower()
+            if r.status_code == 429 and is_groq:
+                if any(x in low for x in ("tokens per day", "requests per day", "daily token", "tpd", "rpd")):
+                    raise ProviderDailyLimitError("Groq's organization-wide Qwen 3.6 daily quota has been reached. Continue after reset or switch to local Ollama.")
+                delay = _reset_seconds(r.headers.get("retry-after")) or _reset_seconds(r.headers.get("x-ratelimit-reset-tokens")) or min(2 ** attempt * 2, 30)
+                _GROQ_LIMITER.backoff(delay); continue
+            if r.status_code in (429, 500, 502, 503, 504) and attempt + 1 < max_retries:
+                time.sleep(min(2 ** attempt * 2, 30)); continue
+            if r.status_code == 404 and is_groq:
+                raise RuntimeError(f"Groq could not find Sonario's current cloud model ({GROQ_MODEL}). Update Sonario if Groq changed its lineup.")
+            raise RuntimeError(last)
+        raise RuntimeError(f"LLM call failed after {max_retries} attempts. {last}")
 
     def chat_json(self, system, user, **kw):
-        """Chat that expects a JSON object back. Strips fences, parses safely."""
-        raw = self.chat(system, user, **kw)
-        return _parse_json(raw)
+        return _parse_json(self.chat(system, user, **kw))
 
 
 class RoutingProvider:
@@ -334,7 +479,7 @@ def check_provider(provider):
                     or "failed to establish" in low or "newconnectionerror" in low
                     or "connection" in low):
                 return False, ("Ollama isn't running. Install it from ollama.com, "
-                               "then run ollama_setup.bat (or  ollama pull qwen3:8b  ). "
+                               "then run ollama_setup.bat (or  ollama pull qwen3.5:9b  ). "
                                "Ollama starts on its own after install (see BUILD.md).")
             if ("404" in low or "not found" in low or "no such model" in low
                     or "try pulling" in low):
