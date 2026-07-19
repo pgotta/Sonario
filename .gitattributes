@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Keep Windows launchers directly executable after clone or ZIP extraction.
+*.bat text eol=crlf
