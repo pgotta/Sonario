@@ -13,8 +13,11 @@ credentials/groq_usage.json
 history/
 history/*.json
 
-# Windows .bat launchers — kept local, documented in BUILD.md, never committed
+# setup_all.bat and run.bat are tracked so Git clones and source ZIPs are usable.
+# Other personal/local batch helpers remain untracked.
 *.bat
+!setup_all.bat
+!run.bat
 
 # Optional local LLM bridges (downloaded by their setup .bat, never committed)
 Windows-Copilot-API/
