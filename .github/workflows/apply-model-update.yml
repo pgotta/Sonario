@@ -1,0 +1,45 @@
+name: Apply Sonario model update
+
+on:
+  push:
+    branches:
+      - fix/qwen36-cloud-qwen35-local
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out update branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/qwen36-cloud-qwen35-local
+          fetch-depth: 0
+
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check requests
+
+      - name: Apply update
+        run: python tools/apply_model_update.py
+
+      - name: Compile and test
+        run: |
+          python -m compileall -q app.py providers.py pipeline.py
+          python -m unittest discover -s tests -v
+
+      - name: Remove temporary updater files
+        run: |
+          rm -rf tools/model_update_patch
+          rm -f tools/apply_model_update.py
+          rm -f .github/workflows/prepare-model-update.yml
+          rm -f .github/workflows/apply-model-update.yml
+
+      - name: Commit tested update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Update Groq to Qwen 3.6 and local defaults to Qwen3.5"
+          git push origin HEAD:fix/qwen36-cloud-qwen35-local
