@@ -1,0 +1,83 @@
+name: Apply tested Sonario release sync
+
+on:
+  push:
+    branches:
+      - agent/sonario-release-sync
+    paths:
+      - ".github/workflows/apply-release-sync.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Rebuild and verify tested payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/sonario-release-sync
+          cat .release-sync2/chunk-* | base64 --decode > /tmp/sonario-release-sync/release-sync.tar.gz
+          echo "b3f9e260006012a820d373a0c40e1cd75772c8c2ff5a95689edbe9c92e8c4fef  /tmp/sonario-release-sync/release-sync.tar.gz" | sha256sum --check -
+          tar -xzf /tmp/sonario-release-sync/release-sync.tar.gz -C /tmp/sonario-release-sync
+
+      - name: Apply tested source and documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git apply --3way /tmp/sonario-release-sync/core.patch
+          cp -a /tmp/sonario-release-sync/replacements/. .
+
+          # BAT files are release-ZIP artifacts only. BUILD.md is their source.
+          find . -type f -iname '*.bat' -not -path './.git/*' -delete
+
+          # These ICOs are generated during Windows setup from icon-512.png.
+          rm -f sonario.ico static/favicon.ico
+
+          # Remove the one-time transport and workflow before committing.
+          rm -rf .release-sync .release-sync2
+          rm -f .github/workflows/apply-release-sync.yml
+
+      - name: Validate synchronized repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check requests
+          python -m compileall -q .
+          python -m unittest discover -s tests -v
+
+          if find . -type f -iname '*.bat' -not -path './.git/*' -print -quit | grep -q .; then
+            echo "BAT files must not be committed."
+            exit 1
+          fi
+
+          grep -qxF '*.bat' .gitignore
+          if grep -Eq '^!.*\.bat$' .gitignore; then
+            echo "BAT ignore exceptions are not allowed."
+            exit 1
+          fi
+
+          for name in setup_all.bat run.bat stop.bat gdrive_setup.bat 'Create Sonario Shortcut.bat'; do
+            grep -qF "### \`$name\`" BUILD.md
+          done
+
+          grep -qF 'qwen/qwen3.6-27b' providers.py
+          ! grep -RinE 'llama[ -]4[ -]scout' --exclude-dir=.git .
+
+      - name: Commit synchronized release source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Sync tested Sonario release and repository policy"
+          git push
