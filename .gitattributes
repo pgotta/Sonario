@@ -1,5 +1,18 @@
-# Auto detect text files and perform LF normalization
+# Normalize repository text files.
 * text=auto
 
-# Keep Windows launchers directly executable after clone or ZIP extraction.
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.txt text eol=lf
+
+# Windows launcher components and locally recreated BAT files.
+*.ps1 text eol=crlf
+*.vbs text eol=crlf
 *.bat text eol=crlf
+
+# Binary assets.
+*.png binary
+*.ico binary

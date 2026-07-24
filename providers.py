@@ -15,6 +15,7 @@ import threading
 import os
 import re
 import math
+import sys
 from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
@@ -300,8 +301,10 @@ class LLMProvider:
         self.reasoning_effort = preset.get("reasoning_effort")
         self.default_max_tokens = int(preset.get("max_tokens", 0) or 0)
         self.on_wait = on_wait
+        self.last_response_meta = {}
 
-    def chat(self, system, user, max_retries=4, timeout=180, max_tokens=None):
+    def chat(self, system, user, max_retries=4, timeout=180, max_tokens=None,
+             json_mode=False, preserve_json=False):
         url = f"{self.base_url}/chat/completions"
         headers = {"Content-Type": "application/json"}
         if self.api_key and self.api_key != "unused":
@@ -310,10 +313,19 @@ class LLMProvider:
         messages = ([{"role": "system", "content": system}] if system else [])
         messages.append({"role": "user", "content": user})
         payload = {"model": self.model, "messages": messages, "stream": False}
-        if output: payload["max_tokens"] = output
-        if self.reasoning_effort: payload["reasoning_effort"] = self.reasoning_effort
-        if "11434" in self.base_url and timeout == 180: timeout = 900
         is_groq = self.provider_id == "groq"
+        if output:
+            # Groq now documents max_completion_tokens; max_tokens remains a
+            # deprecated alias. Keep the old key for other compatible servers.
+            payload["max_completion_tokens" if is_groq else "max_tokens"] = output
+        if self.reasoning_effort: payload["reasoning_effort"] = self.reasoning_effort
+        # Qwen 3.6 supports Groq JSON Object Mode. Keep reasoning hidden so the
+        # response body contains only the JSON object Sonario needs to parse.
+        if json_mode and is_groq:
+            payload["response_format"] = {"type": "json_object"}
+            payload["reasoning_format"] = "hidden"
+            payload["temperature"] = 0.2
+        if "11434" in self.base_url and timeout == 180: timeout = 900
         estimate = _GROQ_LIMITER.estimate(system, user, output or 2048) if is_groq else 0
         last = None
         for attempt in range(max_retries):
@@ -334,7 +346,22 @@ class LLMProvider:
             if r.status_code == 200:
                 data = r.json()
                 if reserved: _GROQ_LIMITER.settle(reserved, (data.get("usage") or {}).get("total_tokens"))
-                return _strip_dashes(_strip_think(data["choices"][0]["message"]["content"]))
+                choice = (data.get("choices") or [{}])[0]
+                message = choice.get("message") or {}
+                content = message.get("content") or ""
+                usage = data.get("usage") or {}
+                self.last_response_meta = {
+                    "finish_reason": choice.get("finish_reason") or "unknown",
+                    "content_chars": len(content),
+                    "completion_tokens": usage.get("completion_tokens"),
+                    "total_tokens": usage.get("total_tokens"),
+                    "max_completion_tokens": output,
+                }
+                # JSON must be parsed before any text cleanup. Mutating the raw
+                # serialized object can damage syntax in edge cases.
+                if preserve_json:
+                    return content
+                return _strip_dashes(_strip_think(content))
             if reserved: _GROQ_LIMITER.refund(reserved)
             last = f"HTTP {r.status_code}: {r.text[:300]}"
             low = r.text.lower()
@@ -351,7 +378,49 @@ class LLMProvider:
         raise RuntimeError(f"LLM call failed after {max_retries} attempts. {last}")
 
     def chat_json(self, system, user, **kw):
-        return _parse_json(self.chat(system, user, **kw))
+        """Return a parsed JSON value, with one larger-budget recovery attempt.
+
+        Qwen can hit the completion ceiling on a few dense documents. The old
+        code repeated the same 700-token request, so those documents failed in
+        exactly the same way twice. Groq calls now start with a larger structured
+        output budget, record safe diagnostics, and retry once with more room.
+        """
+        diagnostic_label = str(kw.pop("diagnostic_label", "") or "")
+        requested = int(kw.get("max_tokens") or self.default_max_tokens or 1000)
+        if self.provider_id == "groq":
+            kw["json_mode"] = True
+            kw["preserve_json"] = True
+            kw["max_tokens"] = max(requested, 1200)
+
+        raw = self.chat(system, user, **kw)
+        value, error = _parse_json_detail(raw)
+        if value is not None:
+            return _clean_json_values(value)
+
+        _log_json_diagnostic(self, diagnostic_label, 1, error)
+        if self.provider_id != "groq":
+            return None
+
+        retry_kw = dict(kw)
+        retry_kw["max_tokens"] = max(int(kw.get("max_tokens") or 0), 1800)
+        retry_user = (
+            user
+            + "\n\nRETRY: Return one COMPLETE compact JSON object only. "
+              "Keep every string concise, keep arrays within the requested limits, "
+              "and close every quote, array, and brace."
+        )
+        raw = self.chat(system, retry_user, **retry_kw)
+        value, error = _parse_json_detail(raw)
+        if value is not None:
+            _log_json_diagnostic(self, diagnostic_label, 2, "recovered")
+            return _clean_json_values(value)
+
+        _log_json_diagnostic(self, diagnostic_label, 2, error)
+        repaired = _repair_truncated_json(raw)
+        if repaired is not None:
+            _log_json_diagnostic(self, diagnostic_label, 3, "locally repaired")
+            return _clean_json_values(repaired)
+        return None
 
 
 class RoutingProvider:
@@ -464,20 +533,111 @@ def _strip_dashes(text):
     return text
 
 
-def _parse_json(text):
-    """Best-effort extraction of a JSON object from a model reply."""
-    t = text.strip()
+def _json_candidate(text):
+    t = (text or "").strip()
     if t.startswith("```"):
         # strip ```json ... ``` fences
-        t = t.split("```", 2)
-        t = t[1] if len(t) > 1 else text
+        parts = t.split("```", 2)
+        t = parts[1] if len(parts) > 1 else t
         if t.lstrip().lower().startswith("json"):
             t = t.lstrip()[4:]
     t = t.strip().strip("`").strip()
-    # find the outermost braces if there's preamble
     start, end = t.find("{"), t.rfind("}")
     if start != -1 and end != -1 and end > start:
-        t = t[start:end + 1]
+        return t[start:end + 1]
+    if start != -1:
+        return t[start:]
+    return t
+
+
+def _parse_json_detail(text):
+    """Parse model JSON and return (value, safe_error_description)."""
+    t = _json_candidate(text)
+    if not t:
+        return None, "empty response"
+    try:
+        return json.loads(t), ""
+    except json.JSONDecodeError as exc:
+        return None, f"{exc.msg} at char {exc.pos}; output_chars={len(t)}"
+
+
+def _parse_json(text):
+    """Best-effort extraction of a JSON object from a model reply."""
+    return _parse_json_detail(text)[0]
+
+
+def _clean_json_values(value):
+    """Apply Sonario's punctuation rule after JSON has safely been parsed."""
+    if isinstance(value, str):
+        return _strip_dashes(_strip_think(value))
+    if isinstance(value, list):
+        return [_clean_json_values(v) for v in value]
+    if isinstance(value, dict):
+        return {str(k): _clean_json_values(v) for k, v in value.items()}
+    return value
+
+
+def _log_json_diagnostic(provider, label, attempt, result):
+    """Write parse metadata only. Never writes document text or model output."""
+    meta = getattr(provider, "last_response_meta", {}) or {}
+    safe_label = re.sub(r"[\r\n\t]+", " ", label)[:120] or "structured-call"
+    print(
+        "[Sonario JSON] "
+        f"item={safe_label!r} attempt={attempt} result={result}; "
+        f"finish_reason={meta.get('finish_reason', 'unknown')}; "
+        f"output_chars={meta.get('content_chars', 'unknown')}; "
+        f"completion_tokens={meta.get('completion_tokens', 'unknown')}; "
+        f"limit={meta.get('max_completion_tokens', 'unknown')}",
+        file=sys.stderr,
+        flush=True,
+    )
+
+
+def _repair_truncated_json(text):
+    """Conservatively close a JSON object truncated at the token ceiling.
+
+    This only appends a missing quote/bracket/brace. It never invents fields or
+    edits document-derived text. More complicated corruption falls through to
+    the pipeline's compact non-JSON recovery format.
+    """
+    t = _json_candidate(text).rstrip()
+    if not t.startswith("{"):
+        return None
+    stack = []
+    in_string = False
+    escaped = False
+    for ch in t:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+        elif ch == "{":
+            stack.append("}")
+        elif ch == "[":
+            stack.append("]")
+        elif ch in "}]":
+            if not stack or stack[-1] != ch:
+                return None
+            stack.pop()
+    if escaped:
+        t = t[:-1]
+    if in_string:
+        t += '"'
+    t = t.rstrip()
+    if t.endswith(":"):
+        t += " null"
+    elif t.endswith(","):
+        t = t[:-1].rstrip()
+    while stack:
+        if t.endswith(","):
+            t = t[:-1].rstrip()
+        t += stack.pop()
     try:
         return json.loads(t)
     except json.JSONDecodeError:

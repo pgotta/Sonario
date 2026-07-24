@@ -289,6 +289,11 @@ def run_job(cfg):
             JOB["progress"] = d
             if d["status"] in ("done", "ocr"):
                 log(f"[{d['i']}/{d['total']}] analyzed {d['file']}")
+            elif d["status"] == "fallback":
+                if d.get("fallback") == "compact":
+                    log(f"[{d['i']}/{d['total']}] analyzed {d['file']} (JSON recovered)")
+                else:
+                    log(f"[{d['i']}/{d['total']}] included {d['file']} (local fallback)")
             elif d["status"] == "cached":
                 log(f"[{d['i']}/{d['total']}] cached {d['file']}")
             elif d["status"] == "skipped":
@@ -925,10 +930,16 @@ def main():
     port = int(os.environ.get("PORT", "5005"))
     url = f"http://127.0.0.1:{port}"
     print(f"\n  Sonario running at {url}\n")
-    try:
-        threading.Timer(1.2, lambda: webbrowser.open(url)).start()
-    except Exception:
-        pass
+    # The Windows desktop launcher opens Sonario in its own app window. Keep the
+    # normal browser-opening behavior when app.py is run directly for development.
+    no_browser = os.environ.get("SONARIO_NO_BROWSER", "").strip().lower() in {
+        "1", "true", "yes", "on"
+    }
+    if not no_browser:
+        try:
+            threading.Timer(1.2, lambda: webbrowser.open(url)).start()
+        except Exception:
+            pass
     app.run(host="127.0.0.1", port=port, debug=False, threaded=True)
 
 

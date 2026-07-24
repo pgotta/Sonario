@@ -56,46 +56,28 @@ def token_present():
 
 
 def connection_status():
-    """Report the *real* Google Drive status without popping a browser window.
+    """Report locally stored Google Drive setup state without contacting Google.
 
-    Returns a dict: {state, message}. state is one of:
-      - 'no_credentials' : credentials.json missing (setup not started)
-      - 'not_signed_in'  : credentials present but no token yet
-      - 'expired'        : token exists but is expired/revoked - needs re-auth
-      - 'ready'          : token valid (or refreshable) - good to go
-
-    This is what the UI badge should reflect, so it doesn't say "ready" when the
-    token is actually dead.
+    Merely opening Sonario must never refresh a token, launch OAuth, sign into a
+    Google account, or make a Google network request. Google is contacted only
+    after the user explicitly clicks Sign in / Reconnect or analyzes a Drive
+    folder.
     """
     if not credentials_present():
         return {"state": "no_credentials",
-                "message": "Add credentials.json (see the setup guide)."}
+                "message": "Add credentials.json only if you choose to use Google Drive."}
     if not token_present():
         return {"state": "not_signed_in",
-                "message": "Not signed in yet. Run gdrive_setup.bat or click Sign in."}
+                "message": "Google Drive is not signed in."}
     try:
         from google.oauth2.credentials import Credentials
-        from google.auth.transport.requests import Request
-        from google.auth.exceptions import RefreshError
         creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
         if creds and creds.valid:
             return {"state": "ready", "message": "Connected."}
-        if creds and creds.expired and creds.refresh_token:
-            # Try a real refresh so the badge reflects reality. If Google has
-            # revoked/expired the refresh token, this is where we learn it.
-            try:
-                creds.refresh(Request())
-                with open(TOKEN_FILE, "w") as f:
-                    f.write(creds.to_json())
-                return {"state": "ready", "message": "Connected."}
-            except RefreshError:
-                return {"state": "expired",
-                        "message": "Sign-in expired - re-authorize to reconnect."}
         return {"state": "expired",
-                "message": "Sign-in expired - re-authorize to reconnect."}
+                "message": "Saved Google Drive sign-in is expired. Reconnect only if you choose to use it."}
     except Exception as e:
-        return {"state": "expired", "message": f"Sign-in problem: {str(e)[:80]}"}
-
+        return {"state": "expired", "message": f"Saved sign-in problem: {str(e)[:80]}"}
 
 def get_service():
     """Build an authorized Drive service, running the OAuth flow if needed."""
