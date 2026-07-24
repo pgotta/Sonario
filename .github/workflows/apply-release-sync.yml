@@ -1,22 +1,21 @@
 name: Apply tested Sonario release sync
 
 on:
-  push:
-    branches:
-      - agent/sonario-release-sync
-    paths:
-      - ".github/workflows/apply-release-sync.yml"
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
 
 jobs:
   apply:
-    if: github.actor != 'github-actions[bot]'
+    if: github.event.pull_request.head.ref == 'agent/sonario-release-sync'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
           persist-credentials: true
 
@@ -24,6 +23,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf /tmp/sonario-release-sync
           mkdir -p /tmp/sonario-release-sync
           cat .release-sync2/chunk-* | base64 --decode > /tmp/sonario-release-sync/release-sync.tar.gz
           echo "b3f9e260006012a820d373a0c40e1cd75772c8c2ff5a95689edbe9c92e8c4fef  /tmp/sonario-release-sync/release-sync.tar.gz" | sha256sum --check -
@@ -39,10 +39,10 @@ jobs:
           # BAT files are release-ZIP artifacts only. BUILD.md is their source.
           find . -type f -iname '*.bat' -not -path './.git/*' -delete
 
-          # These ICOs are generated during Windows setup from icon-512.png.
+          # These ICO files are generated during Windows setup from icon-512.png.
           rm -f sonario.ico static/favicon.ico
 
-          # Remove the one-time transport and workflow before committing.
+          # Remove all one-time transport files and this workflow before commit.
           rm -rf .release-sync .release-sync2
           rm -f .github/workflows/apply-release-sync.yml
 
@@ -80,4 +80,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Sync tested Sonario release and repository policy"
-          git push
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
