@@ -20,9 +20,16 @@ jobs:
           persist-credentials: true
 
       - name: Rebuild and verify tested payload
+        id: payload
         shell: bash
         run: |
           set -euo pipefail
+          if [ ! -d .release-sync2 ]; then
+            echo "apply=false" >> "$GITHUB_OUTPUT"
+            echo "Tested release payload has already been applied."
+            exit 0
+          fi
+          echo "apply=true" >> "$GITHUB_OUTPUT"
           rm -rf /tmp/sonario-release-sync
           mkdir -p /tmp/sonario-release-sync
           cat .release-sync2/chunk-* | base64 --decode > /tmp/sonario-release-sync/release-sync.tar.gz
@@ -30,6 +37,7 @@ jobs:
           tar -xzf /tmp/sonario-release-sync/release-sync.tar.gz -C /tmp/sonario-release-sync
 
       - name: Apply tested source and documentation
+        if: steps.payload.outputs.apply == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -42,11 +50,16 @@ jobs:
           # These ICO files are generated during Windows setup from icon-512.png.
           rm -f sonario.ico static/favicon.ico
 
-          # Remove all one-time transport files and this workflow before commit.
+          # Workflow-file changes are applied separately through the GitHub app,
+          # because GITHUB_TOKEN cannot safely rewrite workflow definitions.
+          git checkout -- .github/workflows/python-tests.yml .github/workflows/apply-release-sync.yml
+
+          # Remove only the temporary data transport. The small workflow is
+          # deleted separately after this source commit lands.
           rm -rf .release-sync .release-sync2
-          rm -f .github/workflows/apply-release-sync.yml
 
       - name: Validate synchronized repository
+        if: steps.payload.outputs.apply == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -73,6 +86,7 @@ jobs:
           ! grep -RinE 'llama[ -]4[ -]scout' --exclude-dir=.git .
 
       - name: Commit synchronized release source
+        if: steps.payload.outputs.apply == 'true'
         shell: bash
         run: |
           set -euo pipefail
