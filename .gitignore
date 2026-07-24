@@ -1,24 +1,43 @@
+# Python
 venv/
+.venv/
 __pycache__/
-*.pyc
-cache/*.json
+*.py[cod]
+.pytest_cache/
+
+# Windows BAT launchers are generated only for release ZIPs.
+# Authoritative contents live in BUILD.md. Never commit BAT files.
+*.bat
+sonario.ico
+static/favicon.ico
+
+# Runtime state
+cache/*
+!cache/.gitkeep
 output/*
 !output/.gitkeep
-!cache/.gitkeep
-credentials/credentials.json
-credentials/token.json
-credentials/api_keys.json
-credentials/groq_usage.json
-.DS_Store
 history/
-history/*.json
+logs/
+*.log
+.sonario.pid
+.sonario.browser.pid
+.sonario-browser-profile/
+Sonario-shutdown-diagnostic-*.txt
 
-# setup_all.bat and run.bat are tracked so Git clones and source ZIPs are usable.
-# Other personal/local batch helpers remain untracked.
-*.bat
-!setup_all.bat
-!run.bat
+# Secrets and provider usage
+credentials/*
+!credentials/.gitkeep
 
-# Optional local LLM bridges (downloaded by their setup .bat, never committed)
+# Installers and downloaded local bridges
+OllamaSetup.exe
 Windows-Copilot-API/
 Deepseek-API/
+
+# Local archives and OS/editor files
+*.zip
+*.sha256
+*.sha256.txt
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

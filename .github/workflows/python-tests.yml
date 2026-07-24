@@ -17,21 +17,46 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Verify Windows launchers are packaged
+
+      - name: Enforce repository and launcher policy
         shell: python
         run: |
           from pathlib import Path
+          import re
 
-          required = {
-              "setup_all.bat": ["qwen3.5:9b", "qwen3.5:4b", "requirements.txt"],
-              "run.bat": ["venv\\Scripts\\python.exe", "python app.py"],
-          }
-          for name, markers in required.items():
-              path = Path(name)
-              assert path.is_file(), f"Missing packaged launcher: {name}"
-              text = path.read_text(encoding="utf-8")
-              for marker in markers:
-                  assert marker in text, f"{name} is missing expected content: {marker}"
-      - run: python -m pip install --disable-pip-version-check requests
-      - run: python -m compileall -q app.py providers.py pipeline.py
-      - run: python -m unittest discover -s tests -v
+          tracked_bats = sorted(Path('.').rglob('*.bat'))
+          assert not tracked_bats, f"BAT files must stay out of Git: {tracked_bats}"
+
+          build = Path('BUILD.md').read_text(encoding='utf-8')
+          required = [
+              'setup_all.bat',
+              'run.bat',
+              'stop.bat',
+              'gdrive_setup.bat',
+              'Create Sonario Shortcut.bat',
+          ]
+          for name in required:
+              assert f"### `{name}`" in build, f"BUILD.md is missing {name}"
+
+          ignore = Path('.gitignore').read_text(encoding='utf-8')
+          assert re.search(r'(?m)^\*\.bat\s*$', ignore), '.gitignore must block all BAT files'
+          assert not re.search(r'(?m)^!.*\.bat\s*$', ignore), 'BAT ignore exceptions are not allowed'
+
+          text = '\n'.join(
+              p.read_text(encoding='utf-8', errors='ignore')
+              for p in Path('.').rglob('*')
+              if p.is_file() and p.suffix.lower() not in {'.png', '.ico'}
+          ).lower()
+          retired_names = ['llama' + ' 4 scout', 'llama' + '-4-scout']
+          for retired in retired_names:
+              assert retired not in text
+          assert 'qwen/qwen3.6-27b' in text
+
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check requests
+
+      - name: Compile Python source
+        run: python -m compileall -q .
+
+      - name: Run regression tests
+        run: python -m unittest discover -s tests -v

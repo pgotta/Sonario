@@ -4,216 +4,155 @@
 
 ---
 
-Sonario is a desktop app with two jobs:
+# Sonario
 
-**Analyze Collection** points an AI at a folder of documents (Windows or Google
-Drive), reads **every file**, and writes a one-page report on **what recurs**
-across them. You pick an interpretation lens, or let **Auto** choose.
+Sonario is a Windows desktop app with two jobs:
 
-**Summarizer** turns a single source into a clear, skimmable summary you can
-download: a Word doc, PDF, EPUB (whole book), text file, a YouTube link, or a web
-page.
+- **Analyze Collection** reads every supported file in one or more Windows or Google Drive folders and writes a report about what recurs across the collection.
+- **Summarizer** turns a document, EPUB, YouTube link, or web page into a clear summary with downloadable Markdown and PDF output.
 
-It runs as a small, **local-first** web app at `http://127.0.0.1:5005`. You bring
-your own AI provider; the default, **Qwen3.5 9B**, runs fully on your own machine via
-[Ollama](https://ollama.com) — no account, no API key, and nothing leaves your
-computer. It's recommended for a typical gaming laptop (8GB GPU). If you'd rather
-use a fast cloud model, Groq (Qwen 3.6 27B) is one dropdown click away — the same
-free engine as the Sonario mobile app (bring your own free key).
+The app runs locally at `http://127.0.0.1:5005`. The default provider,
+**Qwen3.5 9B through Ollama**, runs on your own machine with no account or API key.
+The optional cloud provider is **Groq – Qwen 3.6 27B**, pinned to
+`qwen/qwen3.6-27b`.
 
 <div align="center">
-  <img src="docs/screenshot-youtube-reader.png" alt="Sonario's two-pane YouTube summary reader: timestamped transcript on the left, summary on the right" width="90%">
+  <img src="docs/screenshot-youtube-reader.png" alt="Sonario two-pane YouTube summary reader" width="90%">
   <br>
-  <em>The YouTube reader: timestamped transcript on the left, the summary (with an ask-a-question box) on the right.</em>
+  <em>Timestamped transcript on the left, summary and follow-up questions on the right.</em>
 </div>
 
-> **Setup and installation live in [BUILD.md](BUILD.md).** This README covers what
-> Sonario does and how to use it. BUILD.md covers the `.bat` scripts, the local
-> Ollama models, and the Google Drive setup.
+> Installation, launcher reconstruction, release packaging, and Google Drive setup
+> are documented in **[BUILD.md](BUILD.md)**.
 
-## Contents
+## Current release
 
-- [Quick start](#quick-start)
-- [Analyze Collection](#analyze-collection)
-- [Summarizer](#summarizer)
-- [AI providers](#ai-providers)
-- [Supported files](#supported-files)
-- [Adding providers](#adding-providers)
-- [Tested hardware](#tested-hardware)
-- [Project layout](#project-layout)
-- [Notes](#notes)
-- [License](#license)
+This repository reflects the currently tested Windows release:
+
+- Groq uses **Qwen 3.6 27B**; the retired Scout-era Groq preset is not used anywhere.
+- Groq structured calls use JSON Object Mode with larger retry budgets.
+- If a model still returns malformed or truncated JSON, Sonario repairs or recovers the result instead of dropping the document. The progress log marks this as **`JSON recovered`**.
+- Sonario opens in a dedicated maximized Edge or Chrome app window with browser sign-in and synchronization disabled for that private profile.
+- Closing the Sonario window with **X** stops the exact Flask backend that opened it. `stop.bat` remains the manual fallback.
+- Google Drive access is optional, read-only, and starts only after the user deliberately connects or analyzes a Drive folder.
+
+The X-close path was verified with a Windows shutdown diagnostic: the watcher exited,
+port 5005 stopped listening, and no Sonario `app.py` process remained. Old
+`TIME_WAIT` rows in `netstat` are normal closed connections, not a running server.
 
 ## Quick start
 
-1. Double-click **`setup_all.bat`** once. It does the whole install: finds Python
-   (and fixes your PATH if needed), creates the environment, installs the Python
-   packages and OCR tools, installs [Ollama](https://ollama.com) if needed, and
-   pulls the local models. Safe to re-run; it skips anything already done. This
-   runs fully on your machine with nothing sent to any provider. *Prefer a fast
-   cloud model?* Pick Groq from the dropdown and paste your free API key
-   (console.groq.com). See **[BUILD.md](BUILD.md)** for details.
-2. Double-click **`run.bat`** to start the app, then open
-   `http://127.0.0.1:5005` if it does not open by itself.
-3. Use the top tabs to switch between **Analyze Collection** and **Summarizer**.
-Both screens show results on screen with **Download .md / .pdf**.
+### Release ZIP
 
-> **Want to try Analyze right away?** The download includes a `Sample Documents`
-> folder: 25 fictional text files (startup notes and journal entries) nested
-> across subfolders. Point the **Windows folder** at it to see the analysis and
-> the folder recursion in action. It is just a demo fixture; delete it whenever.
+1. Extract the complete Sonario release ZIP into an empty folder.
+2. Double-click **`setup_all.bat`** once.
+3. Launch Sonario from the desktop shortcut created by setup.
+4. Close the dedicated Sonario window with **X** when finished.
+
+The release ZIP contains the local BAT launchers. BAT files are intentionally not
+stored in GitHub; their authoritative contents are kept in
+**[BUILD.md](BUILD.md#full-bat-launcher-contents)**.
+
+### Git clone or GitHub source archive
+
+A clone does not contain BAT files. Recreate the required launchers from BUILD.md,
+save them with CRLF line endings, then run `setup_all.bat`.
+
+> **Demo collection:** `Sample Documents/` contains 25 fictional nested text files
+> for testing recursive collection analysis. It contains no personal data.
 
 ## Analyze Collection
 
-Point Sonario at a folder and it reads every supported file, then writes a
-one-page report on the patterns that recur across the whole collection. Tick
-**Windows folder**, **Google Drive folder**, or **both**; selected sources are
-scanned together into one report, and subfolders are read automatically.
+Select a **Windows folder**, **Google Drive folder**, or both. Sonario walks all
+subfolders, extracts supported text, maps each document into a structured note,
+counts recurring patterns in Python, and synthesizes the final report.
 
 <div align="center">
-  <img src="docs\Analyze.png" alt="Analyze Collection screen" width="90%">
-  <br>
-  <em>Analyze Collection: pick your folders, choose a lens, and run.</em>
+  <img src="docs/Analyze.png" alt="Analyze Collection screen" width="90%">
 </div>
 
-You choose an **interpretation lens** that changes what the AI looks for and how
-the report reads:
+### Interpretation lenses
 
-| Lens | For | Report focus |
+| Lens | Intended material | Report focus |
 |---|---|---|
-| **Auto** *(default)* | Mixed or unknown | Samples your docs and picks the best lens below |
-| **Journal / Self-reflection** | Diaries, idea scribbles | Themes, what energizes vs weighs on you, journal prompts |
-| **Work / Documentation** | Project notes, meetings, specs | Workstreams, progress, risks and blockers, decisions, open questions |
-| **Research / Notes** | Literature and study notes | Concepts, supported findings, gaps, research questions |
-| **General** | Anything | Neutral themes, notable points, questions to explore |
+| **Auto** | Mixed or unknown | Samples documents and chooses the best lens |
+| **Journal / Self-reflection** | Journals and personal notes | Themes, emotional weight, energy, prompts |
+| **Work / Documentation** | Project notes, meetings, specifications | Workstreams, progress, decisions, risks, open questions |
+| **Research / Notes** | Study or research material | Concepts, findings, gaps, research questions |
+| **General** | Anything else | Neutral themes, notable points, questions to explore |
 
-Every lens ends with a follow-up section tailored to it (journal prompts, open
-questions, research questions, and so on), all built from what recurs.
+### Analysis pipeline
 
-After a report is ready you can **ask questions** about the documents in the box
-at the bottom. It reads the full raw text, so it can answer specifics the summary
-left out, and counting questions (put a word in "quotes") are answered exactly.
+1. **Lens selection:** Auto samples the collection and chooses a lens.
+2. **Extraction:** Files are discovered recursively and converted to text.
+3. **Map:** Each document receives a structured analysis. Results are cached.
+4. **Recovery:** A malformed Groq JSON response gets a larger JSON retry, local JSON repair, a compact text-format recovery, and finally a local fallback. A document is not discarded solely because cloud formatting failed.
+5. **Reduce:** Python counts patterns recurring across multiple documents.
+6. **Synthesize:** The selected lens shapes the final report and follow-up questions.
+
+A recovered item appears in progress output as:
+
+```text
+[5/9] analyzed example.txt (JSON recovered)
+```
 
 <div align="center">
-  <img src="docs\reportoutput.png" alt="A finished analysis report" width="90%">
-  <br>
-  <em>A finished report: recurring themes, the lens's sections, and a question box.</em>
+  <img src="docs/reportoutput.png" alt="Finished Sonario collection report" width="90%">
 </div>
-
-### How Analyze works
-
-1. **Lens.** If the mode is **Auto**, a quick pass over a sample picks the lens.
-2. **Extract.** Walk the folder recursively and pull text from every file.
-3. **Map.** One structured pass per document, framed by the lens. Cached to
-   `cache/`, so it is resumable and re-runs are free.
-4. **Reduce.** A pure-Python aggregation finds what *repeats* across documents.
-5. **Synthesize.** Writes the page-long report in the lens's structure.
-6. **Follow-ups.** A separate pass turns what recurs into the lens's follow-up
-section.
-
-The "what repeats" insight comes from step 4 counting across all your documents,
-not from a single AI guess. Switching lens re-runs the map with different framing,
-so delete `cache/` (or expect a fresh pass) when you change modes.
 
 ## Summarizer
 
-Drop in a file or paste a link and get a structured, skimmable summary with
-sub-headings, bullet points, and tables where the content supports them. A
-**Detailed / Normal / Bullets** toggle switches between a long in-depth version,
-the standard one-page notes, and a short outline.
+Drop in a supported file or paste a link. Sonario produces Detailed, Normal, and
+Bullets views. Long sources are divided into sections and folded down until the
+result fits; a single failed section is noted rather than aborting the entire job.
 
 <div align="center">
-  <img src="docs\summarizerpfd.png" alt="The Summarizer screen" width="90%">
-  <br>
-  <em>The Summarizer: a file, ebook, YouTube link, or web page in; a clean summary out.</em>
+  <img src="docs/summarizerpfd.png" alt="Sonario Summarizer screen" width="90%">
 </div>
 
-| Source | Notes |
+| Source | Behavior |
 |---|---|
-| **Files** | `.docx .pdf .txt .md .rtf`, images (OCR), and `.epub` whole books |
-| **YouTube** | Summarized from captions, so even hour-plus videos work. Videos with captions disabled return a clear message (no audio download) |
-| **Web pages** | Fetches the page and extracts the main article text |
-
-For YouTube, Sonario opens a two-pane reader with the **timestamped transcript**
-on the left and the summary on the right, plus an **ask box** for questions about
-the video. You can drag the divider to resize the panes.
-
-### How long can the input be?
-
-There is no hard length limit. Long sources are split into sections, each is
-summarized, and the section summaries are folded down (repeatedly if needed) until
-a one-page summary fits. It will not crash on a 500-page book or a 2-hour video.
-
-Two honest caveats:
-
-- **Time locally.** On a typical 8GB gaming laptop, a 1-hour video is a few
-minutes, a short book a few minutes, a 500-page book longer (hundreds of calls).
-The Groq cloud engine is much faster but sends your text to Groq's servers.
-- **Detail.** Folding a whole book into one page is inherently high level: you
-get themes and arc, not chapter-by-chapter nuance. (The Summarizer's **Detailed**
-view gives a much longer, in-depth version when you want more.)
-
-If a section fails mid-run (for example a transient error during a long book),
-that section is skipped and the summary still completes with a note that it may be
-incomplete, so one flaky call does not waste a long run.
+| **Files** | `.txt`, `.md`, `.rtf`, `.docx`, `.pdf`, `.epub`, and OCR-supported images |
+| **YouTube** | Uses available captions and provides a timestamped two-pane reader |
+| **Web pages** | Extracts the main article text |
 
 ## AI providers
 
-Both screens share the same providers. The default is free and fully local. Hover
-any provider in the dropdown for a short description of when to use it.
+| Provider | Cost | Location | Notes |
+|---|---:|---|---|
+| **Qwen3.5 9B** | Free | Local | Recommended default; about 6.6 GB through Ollama |
+| **Smart routing** | Free | Local | Qwen3.5 4B for repetitive work and 9B for final synthesis |
+| **Qwen3.5 4B** | Free | Local | Faster and lighter, with lower quality on complex sources |
+| **Ollama – any model** | Free | Local | Enter any model already pulled into Ollama |
+| **Groq – Qwen 3.6 27B** | Free tier, own key | Cloud | Pinned to `qwen/qwen3.6-27b`; text is sent to Groq |
 
-| Provider | Cost | Where it runs | Needs |
-|---|---|---|---|
-| **Qwen3.5 9B** *(recommended, default)* | Free | **Fully local** on your GPU | [Ollama](https://ollama.com) + `setup_all.bat` |
-| **Smart routing** | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `setup_all.bat` (qwen3.5:4b + qwen3.5:9b) |
-| **Qwen3.5 4B** *(lightweight)* | Free | Fully local on your GPU | [Ollama](https://ollama.com) + `ollama pull qwen3.5:4b` |
-| **Ollama** *(any model)* | Free | Fully local on your machine | [Ollama](https://ollama.com) and any pulled model |
-| **Groq - Qwen 3.6 27B** | Free (bring your own key) | Cloud | Free API key from console.groq.com |
+Groq requests use conservative pacing, live reset headers, non-thinking mode, and
+`max_completion_tokens`. Structured document mapping uses JSON Object Mode and a
+layered recovery path for truncated or malformed responses.
 
-All speak the OpenAI-compatible format, so switching is just a dropdown. Advanced
-users can add their own in [`models.json`](#adding-providers).
+### Privacy
 
-> **Qwen3.5 9B (the default).** About 6.6 GB. One strong local model that does every step at full
-> quality. It's the best all-round choice for a typical 8GB gaming laptop — fully
-> private, no account, can't be rate-limited. Run **`setup_all.bat`** once.
+- Local Ollama providers keep document text on the computer.
+- Groq sends the text needed for the selected job to Groq's servers.
+- Google Drive is read-only. Sonario does not silently authorize an account; OAuth is allowed only during an explicit connect/setup action.
+- Remembered API keys are stored locally in plain text under the gitignored `credentials/` directory.
 
-> **Smart routing (optional).** Splits the work between two local models: the
-> lightweight **qwen3.5:4b** for the heavy repetitive parts (per-chunk summaries,
-> classification) and **qwen3.5:9b** for the final write-up. This is lighter on very
-> long jobs, but the chunk-level work is lower quality than running Qwen3.5 9B for
-> everything, and on an 8GB GPU the two models can't both stay resident so Ollama
-> swaps between them. Use it if long-job speed matters more than maximum quality.
+## Google Drive
 
-> **Qwen3.5 4B (lightweight).** About 3.4 GB. The smallest, fastest local model. Best for weaker
-> or CPU-only machines, or when speed matters more than depth. Lower quality on
-> long or complex sources.
-
-> **Groq - Qwen 3.6 27B (cloud).** The fast path, and the same engine as the
-> Sonario mobile app. It runs much faster than local inference and Sonario splits long sources into rate-safe calls. There is no local GPU load. Free to use with your own API key
-> from [console.groq.com](https://console.groq.com) (no credit card). Tick
-> **"Remember this key on this PC"** and you only paste it once - it's saved
-> locally (in plain text, in the gitignored `credentials/` folder) and filled in
-> on every launch. The trade-off is privacy: your text is sent to Groq's servers,
-> so use a local model for anything sensitive. See BUILD.md for the one-minute
-> key setup.
-
-> **A note on privacy.** Sonario runs locally, but where your *text* goes depends
-> on the provider. With the **local** models (Qwen3.5 9B, Qwen3.5 4B, smart routing,
-> or any Ollama model) everything stays on your machine. With a **cloud** provider
-> (Groq), the text of your documents is sent to that provider to generate
-> the result. If a source is sensitive, use a local model. Sonario shows a heads-up
-> if you pair Google Drive with a cloud provider.
+Google Drive is optional. Sonario requests read-only access using a personal Google
+OAuth desktop client. Normal app startup checks only local credential state; it does
+not open an OAuth prompt or refresh a token unless the user explicitly connects or
+starts a Drive-backed job. Full setup steps are in BUILD.md.
 
 ## Supported files
 
-`.txt .md .rtf .docx .pdf .epub` plus **scanned PDFs and images** via OCR.
-`setup_all.bat` installs the OCR tools (Tesseract and Poppler) for you; see BUILD.md
-for the manual links. Without them, everything except scanned images still works.
+`.txt`, `.md`, `.rtf`, `.docx`, `.pdf`, `.epub`, plus scanned PDFs and images via
+Tesseract and Poppler OCR.
 
 ## Adding providers
 
-Edit **`models.json`** to add any OpenAI-compatible endpoint, no code changes.
-Restart and it appears in both dropdowns.
+Add an OpenAI-compatible provider to `models.json`, restart Sonario, and it appears
+in the provider dropdowns.
 
 ```json
 {
@@ -225,68 +164,52 @@ Restart and it appears in both dropdowns.
       "needs_key": false,
       "min_interval": 0.0,
       "note": "Start LM Studio's local server and load a model first."
-}
-}
+    }
+  }
 }
 ```
 
 ## Tested hardware
 
-Sonario was built and tested on this machine. It is not a minimum spec, just the
-reference setup the defaults are tuned for:
-
-| Component | Spec |
-|---|---|
-| **OS** | Windows 11 |
-| **GPU** | NVIDIA RTX 5060 Laptop GPU (8 GB VRAM) |
-| **RAM** | 16 GB |
-| **Python** | 3.10+ |
-
-What this means for the providers:
-
-- **Cloud provider** (Groq) doesn't depend on
-your hardware at all — the work happens on their servers. Any modern PC is fine.
-- **Optional smart routing (qwen3.5:4b + qwen3.5:9b)** downloads about 10 GB total. On the 8 GB reference GPU, Ollama swaps models between stages, which works but adds a short pause. A GPU with 16 GB or more VRAM is a safer target for keeping both loaded together.
-- **Want to avoid swapping?** Pick a single-model local provider (Qwen3.5 9B on its
-own, or the lighter Qwen3.5 4B) so only one model loads — no swap pauses, at the
-cost of either depth (Qwen3.5 4B) or the fast/slow split.
+The defaults were tested on Windows 11 with an NVIDIA RTX 5060 Laptop GPU
+(8 GB VRAM), 16 GB RAM, and Python 3.12. This is a reference system, not a minimum
+requirement. Groq does not depend on local GPU performance.
 
 ## Project layout
 
-```
-app.py Flask server: Analyze job + Summarizer job
-providers.py one OpenAI-compatible interface for every LLM
-extract.py recursive walk + text extraction (incl. OCR)
-modes.py interpretation lenses (auto/journal/work/research/general)
-sources.py Summarizer inputs: YouTube / web page / EPUB / files
-pipeline.py map / reduce / synthesize / prompts / summarize
-gdrive.py Google Drive web OAuth (read-only, isolated)
-export.py Markdown + PDF export
-keystore.py       remembers cloud API keys locally (opt-in)
-models.json add custom providers without editing code
-static/ single-file SPA + icons
-*.bat setup and launch scripts (see BUILD.md)
+```text
+app.py                       Flask server and API routes
+pipeline.py                  mapping, reduction, synthesis, recovery, summarization
+providers.py                 Ollama/Groq/custom provider interface and rate limiting
+extract.py                   recursive file extraction and OCR
+sources.py                   files, EPUB, YouTube, and web inputs
+modes.py                     interpretation lenses
+export.py                    Markdown and PDF export
+gdrive.py                    optional read-only Google Drive OAuth
+keystore.py                  opt-in local API-key storage
+sysmon.py                    local CPU/RAM/GPU monitor
+sonario_window.ps1           dedicated app window and X-close watcher
+stop_sonario.ps1             process-specific manual shutdown
+create_sonario_shortcut.ps1  desktop shortcut creation
+sonario_launcher.vbs         hidden desktop-launch bridge
+static/                      interface and icons
+tests/                       provider and recovery regression tests
+BUILD.md                     installation, packaging, and full BAT contents
 ```
 
-## Notes
+The BAT launchers shown in BUILD.md are added only to downloadable Windows release
+ZIPs. They must remain absent from Git history.
 
-- Everything runs on `127.0.0.1`: single user, your machine only.
-- `cache/`, `output/`, and `credentials/` stay local and are git-ignored.
-- Delete `cache/` to force a fresh re-analysis.
+## Repository policy
+
+- No `*.bat` file may be committed.
+- `.gitignore` blocks all BAT files with no exceptions.
+- CI fails if a tracked BAT file appears or if BUILD.md stops documenting a required launcher.
+- Runtime state, logs, credentials, API keys, caches, output, browser profiles, PID files, and diagnostics are ignored.
 
 ## License
 
-MIT &copy; pgotta. See [LICENSE](LICENSE).
+MIT © pgotta. See [LICENSE](LICENSE).
 
-Local models run through [Ollama](https://ollama.com) and the cloud option
-(Groq) is a third-party service with its own license and terms;
-Sonario just talks to it over the standard OpenAI-compatible API.
-
-
-## Qwen 3.6 cloud pacing
-
-The Groq preset is pinned to `qwen/qwen3.6-27b`; old Scout settings cannot be
-restored. Sonario uses non-thinking mode, task-sized output budgets, conservative
-limits below Groq's 8K TPM / 200K TPD / 30 RPM free-tier baseline, and live reset
-headers. It waits between calls rather than repeatedly returning HTTP 429. Daily
-limits are organization-wide; use Qwen3.5 9B locally for quota-free long jobs.
+Ollama, local models, Groq, Google APIs, Tesseract, Poppler, YouTube, and other
+third-party services or tools retain their own licenses and terms.

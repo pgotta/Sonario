@@ -14,6 +14,7 @@ re-uses the first 179 on the next run. Nothing is ever silently re-done.
 import os
 import json
 import collections
+import re
 
 from extract import walk_folder, extract_text, file_hash
 from providers import ProviderDailyLimitError
@@ -50,29 +51,117 @@ def _map_system(mode_cfg):
 MAP_SYSTEM = _map_system(modes_mod.MODES["journal"])
 
 
-def map_document(provider, text, map_system=None):
-    """One LLM call -> structured note dict. Raises on hard failure.
+def map_document(provider, text, map_system=None, diagnostic_label=None):
+    """Analyze one document, with deterministic recovery for malformed JSON.
 
-    Per-document work runs once per file (dozens to hundreds of times per job),
-    so it routes to the FAST helper model when one is configured.
+    Groq first gets two JSON Object Mode attempts with increasing output room.
+    If the model still cannot complete JSON, Sonario asks for a compact keyed
+    text format that is much harder to truncate. A final local extractive note
+    prevents one troublesome document from disappearing from the collection.
     """
     fast = getattr(provider, "fast", provider)
     sys_prompt = map_system or MAP_SYSTEM
-    cap = MAX_CHARS_PER_DOC
-    snippet = text[:cap]
+    snippet = text[:MAX_CHARS_PER_DOC]
     user = f"Document:\n\"\"\"\n{snippet}\n\"\"\""
-    note = fast.chat_json(sys_prompt, user, max_tokens=700)
-    if not isinstance(note, dict):
-        # one corrective retry with a blunt instruction
-        note = fast.chat_json(
-            sys_prompt,
-            user + "\n\nReturn ONLY the JSON object. No other text.",
-            max_tokens=700,
-        )
-    if not isinstance(note, dict):
-        raise RuntimeError("model did not return valid JSON")
-    return _normalize_note(note)
+    note = fast.chat_json(
+        sys_prompt,
+        user,
+        max_tokens=1200,
+        diagnostic_label=diagnostic_label,
+    )
+    if isinstance(note, dict):
+        return _normalize_note(note)
 
+    mode_hint = sys_prompt.split(" Return ONLY", 1)[0].strip()
+    fallback_system = (
+        mode_hint
+        + " JSON formatting failed, so use this compact fallback format. "
+          "Return exactly eight labeled lines and no other text:\n"
+          "GIST: one or two concise sentences\n"
+          "THEMES: short item | short item\n"
+          "VALENCE: positive | negative | mixed | neutral\n"
+          "ENERGY: short item | short item\n"
+          "FRICTION: short item | short item\n"
+          "IDEAS: short item | short item\n"
+          "ACTIONS: short item | short item\n"
+          "PEOPLE: short item | short item\n"
+          "Use NONE when a list is empty. Keep each list to at most six items."
+    )
+    compact = fast.chat(fallback_system, user, max_tokens=900)
+    note = _parse_compact_note(compact)
+    if note is not None:
+        note = _normalize_note(note)
+        note["_fallback"] = "compact"
+        return note
+
+    note = _local_extractive_note(text)
+    note["_fallback"] = "local"
+    return note
+
+
+def _split_compact_items(value):
+    value = str(value or "").strip()
+    if not value or value.lower() in {"none", "n/a", "[]"}:
+        return []
+    parts = re.split(r"\s*\|\s*|\s*;\s*", value)
+    return [p.strip(" -•\t") for p in parts if p.strip(" -•\t")][:6]
+
+
+def _parse_compact_note(text):
+    fields = {}
+    aliases = {
+        "gist": "gist", "themes": "themes", "valence": "valence",
+        "energy": "energy_sources", "friction": "friction_sources",
+        "ideas": "ideas", "actions": "action_items", "people": "people",
+    }
+    for raw in str(text or "").splitlines():
+        if ":" not in raw:
+            continue
+        key, value = raw.split(":", 1)
+        target = aliases.get(key.strip().lower())
+        if target:
+            fields[target] = value.strip()
+    if not fields.get("gist"):
+        return None
+    result = {
+        "gist": fields.get("gist", ""),
+        "valence": fields.get("valence", "neutral").lower(),
+    }
+    for key in ("themes", "energy_sources", "friction_sources",
+                "ideas", "action_items", "people"):
+        result[key] = _split_compact_items(fields.get(key, ""))
+    return result
+
+
+def _local_extractive_note(text):
+    """Last-resort local note. No network call and no document is discarded."""
+    clean = re.sub(r"\s+", " ", str(text or "")).strip()
+    sentences = re.split(r"(?<=[.!?])\s+", clean)
+    gist = " ".join(s for s in sentences[:2] if s).strip()[:500]
+    if not gist:
+        gist = clean[:500] or "Document included with limited local analysis."
+
+    stop = {
+        "about", "after", "again", "also", "and", "are", "because", "been",
+        "before", "being", "but", "can", "could", "did", "does", "for", "from",
+        "had", "has", "have", "her", "him", "his", "how", "into", "its", "just",
+        "more", "not", "now", "only", "our", "out", "she", "that", "the", "their",
+        "them", "then", "there", "they", "this", "too", "was", "were", "what",
+        "when", "where", "which", "who", "will", "with", "would", "you", "your",
+    }
+    words = [w.lower() for w in re.findall(r"[A-Za-z][A-Za-z']{3,}", clean)]
+    counts = collections.Counter(w for w in words if w not in stop)
+    themes = [w for w, _ in counts.most_common(6)]
+    return _normalize_note({
+        "gist": gist,
+        "themes": themes,
+        "valence": "neutral",
+        "energy_sources": [],
+        "friction_sources": [],
+        "ideas": [],
+        "action_items": [],
+        "people": [],
+    })
 
 def _normalize_note(note):
     keys_list = ["themes", "energy_sources", "friction_sources",
@@ -132,7 +221,8 @@ def run_map(provider, files, progress=None, stop_flag=None, map_system=None):
             continue
 
         try:
-            note = map_document(provider, text, map_system=map_system)
+            note = map_document(provider, text, map_system=map_system,
+                                diagnostic_label=rel)
         except ProviderDailyLimitError:
             raise
         except Exception as e:
@@ -148,7 +238,10 @@ def run_map(provider, files, progress=None, stop_flag=None, map_system=None):
             json.dump(rec, f, ensure_ascii=False, indent=2)
         notes.append(rec)
         if progress:
-            progress({"i": i + 1, "total": total, "file": rel, "status": "done"})
+            fallback = note.get("_fallback")
+            progress({"i": i + 1, "total": total, "file": rel,
+                      "status": "fallback" if fallback else "done",
+                      "fallback": fallback})
     return notes, skipped
 
 

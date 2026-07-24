@@ -1,25 +1,31 @@
 ========================================================================
-  UPDATING SONARIO — DON'T LOSE YOUR GOOGLE DRIVE CREDENTIALS
+  UPDATING SONARIO — PRESERVE LOCAL CREDENTIALS AND RUNTIME DATA
 ========================================================================
 
-Google only lets you download credentials.json ONCE. If you replace your
-whole Sonario folder with a new version, you could overwrite (delete) it
-and have to create a new Google OAuth client from scratch.
+A Sonario release never includes real Google credentials, OAuth tokens, API
+keys, usage state, analysis history, cache, output, logs, PID files, or the
+private browser profile.
 
-SAFE WAY TO UPDATE to a newer Sonario:
+Before replacing an existing installation, back up the entire credentials\
+folder, especially:
 
-  Option A (easiest): copy the new files OVER your existing folder, and
-  when Windows asks about duplicates, choose
-      "Skip these files"  (or untick credentials.json / token.json).
-  Your credentials/ folder is never included in the download, so there's
-  nothing in the new version that should replace it.
+  credentials\credentials.json
+  credentials\token.json
+  credentials\api_keys.json
 
-  Option B (safest): before updating, copy your
-      credentials\credentials.json   (and credentials\token.json if present)
-  somewhere safe. Update Sonario however you like, then copy those two
-  files back into the new credentials\ folder.
+Recommended update:
 
-The download never contains credentials.json or token.json — only an empty
-placeholder — so a clean extract won't touch your files. This note is just
-to protect you from a "replace everything" click.
+  1. Close Sonario with X and confirm the window is gone.
+  2. Copy credentials\ somewhere safe.
+  3. Extract the new complete release over the old installation, or into a new
+     folder.
+  4. Restore credentials\ if using a new folder.
+  5. Run setup_all.bat if dependencies or launchers changed.
+
+The current release uses Groq Qwen 3.6 27B, recovers malformed structured model
+responses instead of dropping documents, opens in a dedicated private browser
+window, and stops its exact Flask backend when that window is closed with X.
+
+BAT files are included in Windows release ZIPs but intentionally excluded from
+Git. Their authoritative source is BUILD.md.
 ========================================================================
